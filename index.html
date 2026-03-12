@@ -1339,7 +1339,7 @@
     }
 
     function createStroke(point) {
-      return {
+      const stroke = {
         inkId: state.activeInkId,
         mode: state.mode,
         brushSize: state.brushSize,
@@ -1348,30 +1348,48 @@
         pathLength: 0,
         seed: Math.random() * 1000 + performance.now() * 0.01
       };
+
+      Object.defineProperty(stroke, "_sparkleCandidateCount", {
+        value: 0,
+        writable: true,
+        configurable: true
+      });
+
+      return stroke;
     }
 
     function getPreset(stroke) {
       return inkById.get(stroke.inkId);
     }
 
-    function getMaxSparkles(stroke) {
-      return stroke.mode === "spray" ? 220 : 140;
+    function getStrokeSpacing(stroke) {
+      return stroke.mode === "spray"
+        ? Math.max(3.2, stroke.brushSize * 0.28)
+        : Math.max(0.9, stroke.brushSize * 0.08);
     }
 
-    function maybeAddSparkleNode(stroke, preset, stamp, randomKey) {
-      if (stroke.sparkleNodes.length >= getMaxSparkles(stroke)) {
-        return;
-      }
-
+    function getMaxSparkles(stroke, preset, currentPathLength = stroke.pathLength) {
+      const baseCap = stroke.mode === "spray" ? 220 : 140;
+      const hardCap = stroke.mode === "spray" ? 720 : 420;
+      const attemptsPerStamp = stroke.mode === "spray"
+        ? clamp(Math.round(stroke.brushSize * 0.72), 6, 24)
+        : 1;
+      const estimatedAttempts = Math.max(
+        1,
+        Math.ceil(Math.max(currentPathLength, stroke.brushSize) / getStrokeSpacing(stroke))
+      ) * attemptsPerStamp;
       const chanceBase = preset.sparkleDensity * (stroke.mode === "spray" ? 1.25 : 0.8);
-      if (hash01(randomKey) > chanceBase) {
-        return;
-      }
+      const adaptiveCap = Math.round(estimatedAttempts * chanceBase * 1.35 + baseCap * 0.2);
 
+      return clamp(Math.max(baseCap, adaptiveCap), baseCap, hardCap);
+    }
+
+    function createSparkleNode(stamp, preset, randomKey) {
       const minSize = preset.sparkleSizeRange[0];
       const maxSize = preset.sparkleSizeRange[1];
       const spread = stamp.radius * (stamp.isSpray ? 1.6 : 0.72);
-      stroke.sparkleNodes.push({
+
+      return {
         x: stamp.x + (hash01(randomKey + 1.17) - 0.5) * spread,
         y: stamp.y + (hash01(randomKey + 2.11) - 0.5) * spread,
         size: lerp(minSize, maxSize, hash01(randomKey + 3.09)) * (0.7 + stamp.pressure * 0.45),
@@ -1379,7 +1397,39 @@
         hueOffset: (hash01(randomKey + 5.9) - 0.5) * 320,
         drift: lerp(0.18, 1.12, hash01(randomKey + 7.7)),
         brightness: lerp(0.55, 1.25, hash01(randomKey + 9.2))
-      });
+      };
+    }
+
+    function ensureSparkleCandidateCount(stroke) {
+      if (!Number.isFinite(stroke._sparkleCandidateCount)) {
+        Object.defineProperty(stroke, "_sparkleCandidateCount", {
+          value: stroke.sparkleNodes.length,
+          writable: true,
+          configurable: true
+        });
+      }
+    }
+
+    function maybeAddSparkleNode(stroke, preset, stamp, randomKey) {
+      const chanceBase = preset.sparkleDensity * (stroke.mode === "spray" ? 1.25 : 0.8);
+      if (hash01(randomKey) > chanceBase) {
+        return;
+      }
+
+      ensureSparkleCandidateCount(stroke);
+      stroke._sparkleCandidateCount += 1;
+      const budget = getMaxSparkles(stroke, preset, stamp.travel);
+      const sparkleNode = createSparkleNode(stamp, preset, randomKey);
+
+      if (stroke.sparkleNodes.length < budget) {
+        stroke.sparkleNodes.push(sparkleNode);
+        return;
+      }
+
+      const replacementIndex = Math.floor(hash01(randomKey + 10.37) * stroke._sparkleCandidateCount);
+      if (replacementIndex < budget) {
+        stroke.sparkleNodes[replacementIndex] = sparkleNode;
+      }
     }
 
     function drawBrushStamp(ctx, stroke, preset, point, angle, travel, emitSparkles, stampIndex) {
@@ -1390,6 +1440,7 @@
         radius,
         angle,
         pressure: point.pressure,
+        travel,
         progress: travel / Math.max(stroke.brushSize * 1.2, 1),
         seed: stroke.seed,
         isSpray: false
@@ -1418,6 +1469,7 @@
           radius,
           angle: angle + (hash01(key + 3.9) - 0.5) * 1.6,
           pressure: point.pressure,
+          travel,
           progress: travel / Math.max(stroke.brushSize, 1) + index * 0.08,
           seed: stroke.seed + index * 0.01,
           isSpray: true
@@ -1449,9 +1501,7 @@
       const dy = toPoint.y - fromPoint.y;
       const distance = Math.hypot(dx, dy);
       const angle = distance > 0.001 ? Math.atan2(dy, dx) : 0;
-      const spacing = stroke.mode === "spray"
-        ? Math.max(3.2, stroke.brushSize * 0.28)
-        : Math.max(0.9, stroke.brushSize * 0.08);
+      const spacing = getStrokeSpacing(stroke);
       const steps = Math.max(1, Math.ceil(distance / spacing));
       let travel = startTravel;
 
