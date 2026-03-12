@@ -284,6 +284,60 @@
       flex-wrap: wrap;
     }
 
+    .background-card {
+      display: grid;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .background-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .background-chip {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      border: 1px solid rgba(91, 64, 36, 0.18);
+      background: var(--bg-color, #f6ecd8);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68), 0 4px 10px rgba(96, 58, 20, 0.08);
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .background-chip:hover {
+      transform: translateY(-1px);
+    }
+
+    .background-chip.is-active {
+      border-color: rgba(94, 50, 9, 0.36);
+      box-shadow: 0 0 0 3px rgba(183, 127, 48, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.82), 0 8px 14px rgba(96, 58, 20, 0.12);
+    }
+
+    .background-chip--transparent {
+      background:
+        linear-gradient(45deg, rgba(126, 112, 96, 0.18) 25%, transparent 25%, transparent 75%, rgba(126, 112, 96, 0.18) 75%),
+        linear-gradient(45deg, rgba(126, 112, 96, 0.18) 25%, transparent 25%, transparent 75%, rgba(126, 112, 96, 0.18) 75%);
+      background-position: 0 0, 8px 8px;
+      background-size: 16px 16px;
+      background-color: rgba(255, 255, 255, 0.72);
+    }
+
+    .background-chip--transparent::after {
+      content: "";
+      position: absolute;
+      inset: 7px;
+      border-radius: 999px;
+      border: 2px solid rgba(160, 51, 51, 0.55);
+      transform: rotate(-24deg);
+    }
+
     .action-button {
       color: var(--ink);
       background: rgba(255, 255, 255, 0.46);
@@ -442,6 +496,7 @@
 
       .slider-card,
       .segmented,
+      .background-card,
       .actions {
         width: 100%;
       }
@@ -488,6 +543,11 @@
           <div class="segmented" role="group" aria-label="Drawing mode">
             <button class="segment-button is-active" type="button" data-mode="brush" aria-pressed="true">Brush</button>
             <button class="segment-button" type="button" data-mode="spray" aria-pressed="false">Spray</button>
+          </div>
+
+          <div class="background-card">
+            <span class="group-label">Background</span>
+            <div id="backgroundPicker" class="background-grid" role="list" aria-label="Export background"></div>
           </div>
 
           <div class="actions">
@@ -570,9 +630,19 @@
       ctx.scale(stretch, squeeze);
       ctx.globalCompositeOperation = "source-over";
 
-      const baseGradient = ctx.createRadialGradient(-radius * 0.35, -radius * 0.42, radius * 0.14, 0, 0, radius * 1.18);
+      const blendGradient = ctx.createRadialGradient(-radius * 0.12, -radius * 0.14, radius * 0.12, 0, 0, radius * 1.42);
+      blendGradient.addColorStop(0, palette[1] || palette[0]);
+      blendGradient.addColorStop(0.48, palette[palette.length - 1] || palette[0]);
+      blendGradient.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.globalAlpha = opacity * (stamp.isSpray ? 0.18 : 0.28);
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * 1.1, 0, TAU);
+      ctx.fillStyle = blendGradient;
+      ctx.fill();
+
+      const baseGradient = ctx.createRadialGradient(-radius * 0.22, -radius * 0.28, radius * 0.18, 0, 0, radius * 1.28);
       addGradientStops(baseGradient, palette);
-      ctx.globalAlpha = opacity;
+      ctx.globalAlpha = opacity * 0.92;
       ctx.beginPath();
       ctx.arc(0, 0, radius, 0, TAU);
       ctx.fillStyle = baseGradient;
@@ -584,16 +654,16 @@
       sheen.addColorStop(0.54, shineColor);
       sheen.addColorStop(0.72, "rgba(255,255,255,0.04)");
       sheen.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.globalAlpha = (preset.highlightAlpha || 0.32) * (stamp.isSpray ? 0.7 : 1);
+      ctx.globalAlpha = (preset.highlightAlpha || 0.32) * (stamp.isSpray ? 0.55 : 0.82);
       ctx.fillStyle = sheen;
       ctx.fill();
 
-      ctx.globalAlpha = preset.edgeAlpha || 0.16;
+      ctx.globalAlpha = (preset.edgeAlpha || 0.16) * 0.28;
       ctx.lineWidth = Math.max(0.8, radius * 0.12);
       ctx.strokeStyle = rimColor;
       ctx.stroke();
 
-      ctx.globalAlpha = preset.shadowAlpha || 0.09;
+      ctx.globalAlpha = (preset.shadowAlpha || 0.09) * 0.42;
       ctx.beginPath();
       ctx.arc(radius * 0.12, radius * 0.14, radius * 0.76, 0, TAU);
       ctx.fillStyle = shadowColor;
@@ -951,11 +1021,21 @@
     ];
 
     const inkById = new Map(inkPresets.map((preset) => [preset.id, preset]));
+    const backgroundOptions = [
+      { id: "transparent", label: "Transparent", color: null, className: "background-chip--transparent" },
+      { id: "paper", label: "Paper", color: EXPORT_BACKGROUND },
+      { id: "ivory", label: "Ivory", color: "#fff7ef" },
+      { id: "blush", label: "Blush", color: "#f8e3e8" },
+      { id: "mint", label: "Mint", color: "#e3f1e8" },
+      { id: "sky", label: "Sky", color: "#e2ebfb" }
+    ];
+    const backgroundById = new Map(backgroundOptions.map((background) => [background.id, background]));
 
     const state = {
       activeInkId: inkPresets[0].id,
       brushSize: 20,
       mode: "brush",
+      exportBackgroundId: "paper",
       strokes: [],
       activeStroke: null,
       isDrawing: false,
@@ -965,6 +1045,7 @@
     };
 
     const inkPicker = document.getElementById("inkPicker");
+    const backgroundPicker = document.getElementById("backgroundPicker");
     const brushSizeInput = document.getElementById("brushSize");
     const brushValue = document.getElementById("brushValue");
     const modeButtons = Array.from(document.querySelectorAll("[data-mode]"));
@@ -1006,6 +1087,27 @@
       updateInkReadout();
     }
 
+    function buildBackgroundPicker() {
+      const fragment = document.createDocumentFragment();
+
+      backgroundOptions.forEach((background) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `background-chip ${background.className || ""}`.trim();
+        button.setAttribute("role", "listitem");
+        button.dataset.backgroundId = background.id;
+        button.setAttribute("aria-label", background.label);
+        if (background.color) {
+          button.style.setProperty("--bg-color", background.color);
+        }
+        button.addEventListener("click", () => selectExportBackground(background.id));
+        fragment.appendChild(button);
+      });
+
+      backgroundPicker.appendChild(fragment);
+      updateBackgroundButtons();
+    }
+
     function selectInk(inkId) {
       if (!inkById.has(inkId)) {
         return;
@@ -1026,6 +1128,25 @@
       const preset = inkById.get(state.activeInkId);
       activeInkName.textContent = preset.label;
       activeInkNote.textContent = preset.note;
+    }
+
+    function selectExportBackground(backgroundId) {
+      if (!backgroundById.has(backgroundId)) {
+        return;
+      }
+
+      state.exportBackgroundId = backgroundId;
+      updateBackgroundButtons();
+    }
+
+    function updateBackgroundButtons() {
+      backgroundPicker.querySelectorAll(".background-chip").forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.backgroundId === state.exportBackgroundId);
+      });
+    }
+
+    function getExportBackground() {
+      return backgroundById.get(state.exportBackgroundId) || backgroundById.get("paper");
     }
 
     function updateModeButtons() {
@@ -1314,8 +1435,8 @@
       const distance = Math.hypot(dx, dy);
       const angle = distance > 0.001 ? Math.atan2(dy, dx) : 0;
       const spacing = stroke.mode === "spray"
-        ? Math.max(4, stroke.brushSize * 0.38)
-        : Math.max(1.6, stroke.brushSize * 0.18);
+        ? Math.max(3.2, stroke.brushSize * 0.28)
+        : Math.max(0.9, stroke.brushSize * 0.08);
       const steps = Math.max(1, Math.ceil(distance / spacing));
       let travel = startTravel;
 
@@ -1364,9 +1485,59 @@
       return state.activeStroke ? [...state.strokes, state.activeStroke] : state.strokes;
     }
 
-    function drawSparklesToContext(ctx, time, scaleX = 1, scaleY = 1) {
+    function getExportBounds() {
+      const strokes = getRenderableStrokes();
+
+      if (!strokes.length) {
+        return {
+          x: 0,
+          y: 0,
+          width: state.sceneWidth,
+          height: state.sceneHeight
+        };
+      }
+
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+
+      strokes.forEach((stroke) => {
+        const strokePad = stroke.brushSize * (stroke.mode === "spray" ? 2.3 : 1.7);
+        stroke.points.forEach((point) => {
+          minX = Math.min(minX, point.x - strokePad);
+          minY = Math.min(minY, point.y - strokePad);
+          maxX = Math.max(maxX, point.x + strokePad);
+          maxY = Math.max(maxY, point.y + strokePad);
+        });
+
+        stroke.sparkleNodes.forEach((node) => {
+          const sparklePad = node.size * 4.5 + node.drift * 3;
+          minX = Math.min(minX, node.x - sparklePad);
+          minY = Math.min(minY, node.y - sparklePad);
+          maxX = Math.max(maxX, node.x + sparklePad);
+          maxY = Math.max(maxY, node.y + sparklePad);
+        });
+      });
+
+      const outerPad = 28;
+      const x = clamp(Math.floor(minX - outerPad), 0, state.sceneWidth);
+      const y = clamp(Math.floor(minY - outerPad), 0, state.sceneHeight);
+      const right = clamp(Math.ceil(maxX + outerPad), 0, state.sceneWidth);
+      const bottom = clamp(Math.ceil(maxY + outerPad), 0, state.sceneHeight);
+
+      return {
+        x,
+        y,
+        width: Math.max(1, right - x),
+        height: Math.max(1, bottom - y)
+      };
+    }
+
+    function drawSparklesToContext(ctx, time, scaleX = 1, scaleY = 1, offsetX = 0, offsetY = 0) {
       ctx.save();
       ctx.scale(scaleX, scaleY);
+      ctx.translate(-offsetX, -offsetY);
       getRenderableStrokes().forEach((stroke) => {
         const preset = getPreset(stroke);
         stroke.sparkleNodes.forEach((node) => {
@@ -1376,12 +1547,27 @@
       ctx.restore();
     }
 
-    function renderCombinedFrame(ctx, time, width, height) {
+    function renderCombinedFrame(ctx, time, width, height, bounds = getExportBounds(), background = getExportBackground()) {
+      const sourceScaleX = paintCanvas.width / state.sceneWidth;
+      const sourceScaleY = paintCanvas.height / state.sceneHeight;
+
       ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = EXPORT_BACKGROUND;
-      ctx.fillRect(0, 0, width, height);
-      ctx.drawImage(paintCanvas, 0, 0, width, height);
-      drawSparklesToContext(ctx, time, width / state.sceneWidth, height / state.sceneHeight);
+      if (background.color) {
+        ctx.fillStyle = background.color;
+        ctx.fillRect(0, 0, width, height);
+      }
+      ctx.drawImage(
+        paintCanvas,
+        bounds.x * sourceScaleX,
+        bounds.y * sourceScaleY,
+        bounds.width * sourceScaleX,
+        bounds.height * sourceScaleY,
+        0,
+        0,
+        width,
+        height
+      );
+      drawSparklesToContext(ctx, time, width / bounds.width, height / bounds.height, bounds.x, bounds.y);
     }
 
     function downloadBlob(blob, filename) {
@@ -1402,6 +1588,7 @@
         activeInkId: state.activeInkId,
         brushSize: state.brushSize,
         mode: state.mode,
+        exportBackgroundId: state.exportBackgroundId,
         strokes: getRenderableStrokes()
       }, null, 2);
     }
@@ -1440,6 +1627,9 @@
         if (raw.mode === "spray" || raw.mode === "brush") {
           state.mode = raw.mode;
         }
+        if (backgroundById.has(raw.exportBackgroundId)) {
+          state.exportBackgroundId = raw.exportBackgroundId;
+        }
 
         if (Number.isFinite(raw.sceneWidth) && Number.isFinite(raw.sceneHeight) && raw.sceneWidth > 0 && raw.sceneHeight > 0) {
           const scaleX = state.sceneWidth / raw.sceneWidth;
@@ -1448,6 +1638,7 @@
         }
 
         updateInkButtons();
+        updateBackgroundButtons();
         updateInkReadout();
         updateModeButtons();
         redrawPaint();
@@ -1508,12 +1699,11 @@
       ];
     }
 
-    function buildGifPalette(frames) {
+    function buildGifPalette(frames, transparentBackground) {
       const counts = new Map();
-      counts.set(quantizeColor(246, 236, 216), 1);
 
       frames.forEach((frame) => {
-        for (let index = 0; index < frame.data.length; index += 8) {
+        for (let index = 0; index < frame.data.length; index += 4) {
           if (frame.data[index + 3] < 12) {
             continue;
           }
@@ -1523,31 +1713,38 @@
         }
       });
 
-      const palette = Array.from(counts.entries())
+      const palette = transparentBackground ? [[0, 0, 0]] : [];
+      palette.push(...Array.from(counts.entries())
         .sort((left, right) => right[1] - left[1])
-        .slice(0, 256)
-        .map(([key]) => expandColorKey(key));
+        .slice(0, transparentBackground ? 255 : 256)
+        .map(([key]) => expandColorKey(key)));
 
       const tableSize = nextPowerOfTwo(Math.max(2, palette.length));
       while (palette.length < tableSize) {
-        palette.push(palette[palette.length - 1] || [246, 236, 216]);
+        palette.push(palette[palette.length - 1] || [0, 0, 0]);
       }
 
       return palette;
     }
 
-    function mapFrameToPalette(frame, palette) {
+    function mapFrameToPalette(frame, palette, transparentBackground) {
       const indexed = new Uint8Array(frame.data.length / 4);
       const cache = new Map();
+      const startIndex = transparentBackground ? 1 : 0;
 
       for (let pixel = 0, index = 0; index < frame.data.length; index += 4, pixel += 1) {
+        if (transparentBackground && frame.data[index + 3] < 12) {
+          indexed[pixel] = 0;
+          continue;
+        }
+
         const key = quantizeColor(frame.data[index], frame.data[index + 1], frame.data[index + 2]);
         if (!cache.has(key)) {
           const [red, green, blue] = expandColorKey(key);
-          let bestIndex = 0;
+          let bestIndex = startIndex;
           let bestDistance = Infinity;
 
-          for (let paletteIndex = 0; paletteIndex < palette.length; paletteIndex += 1) {
+          for (let paletteIndex = startIndex; paletteIndex < palette.length; paletteIndex += 1) {
             const color = palette[paletteIndex];
             const distance =
               (red - color[0]) * (red - color[0]) +
@@ -1647,8 +1844,8 @@
       writer.writeByte(0);
     }
 
-    function encodeGif(frames, width, height, delayCentiseconds) {
-      const palette = buildGifPalette(frames);
+    function encodeGif(frames, width, height, delayCentiseconds, transparentBackground) {
+      const palette = buildGifPalette(frames, transparentBackground);
       const minCodeSize = Math.max(2, Math.ceil(Math.log2(palette.length)));
       const writer = new ByteWriter();
 
@@ -1665,10 +1862,10 @@
       writer.writeBytes([0x03, 0x01, 0x00, 0x00, 0x00]);
 
       frames.forEach((frame) => {
-        const indexed = mapFrameToPalette(frame, palette);
-        writer.writeBytes([0x21, 0xF9, 0x04, 0x04]);
+        const indexed = mapFrameToPalette(frame, palette, transparentBackground);
+        writer.writeBytes([0x21, 0xF9, 0x04, transparentBackground ? 0x05 : 0x04]);
         writer.writeShort(delayCentiseconds);
-        writer.writeByte(0);
+        writer.writeByte(transparentBackground ? 0 : 0);
         writer.writeByte(0);
 
         writer.writeByte(0x2C);
@@ -1686,9 +1883,11 @@
     }
 
     async function exportGif() {
+      const background = getExportBackground();
+      const bounds = getExportBounds();
       const frameScale = Math.min(1, 720 / Math.max(state.sceneWidth, state.sceneHeight));
-      const width = Math.max(1, Math.round(state.sceneWidth * frameScale));
-      const height = Math.max(1, Math.round(state.sceneHeight * frameScale));
+      const width = Math.max(1, Math.round(bounds.width * frameScale));
+      const height = Math.max(1, Math.round(bounds.height * frameScale));
       const captureCanvas = document.createElement("canvas");
       const captureCtx = captureCanvas.getContext("2d");
       const frameCount = 18;
@@ -1707,12 +1906,12 @@
         await new Promise((resolve) => requestAnimationFrame(resolve));
         for (let index = 0; index < frameCount; index += 1) {
           const time = startTime + (loopDuration / frameCount) * index;
-          renderCombinedFrame(captureCtx, time, width, height);
+          renderCombinedFrame(captureCtx, time, width, height, bounds, background);
           frames.push(captureCtx.getImageData(0, 0, width, height));
         }
 
         downloadBlob(
-          new Blob([encodeGif(frames, width, height, delayCentiseconds)], { type: "image/gif" }),
+          new Blob([encodeGif(frames, width, height, delayCentiseconds, !background.color)], { type: "image/gif" }),
           `shimmer-ink-${Date.now()}.gif`
         );
       } catch (error) {
@@ -1812,11 +2011,15 @@
     }
 
     function exportPng() {
+      const background = getExportBackground();
+      const bounds = getExportBounds();
+      const sourceScaleX = paintCanvas.width / state.sceneWidth;
+      const sourceScaleY = paintCanvas.height / state.sceneHeight;
       const exportCanvas = document.createElement("canvas");
-      exportCanvas.width = paintCanvas.width;
-      exportCanvas.height = paintCanvas.height;
+      exportCanvas.width = Math.max(1, Math.round(bounds.width * sourceScaleX));
+      exportCanvas.height = Math.max(1, Math.round(bounds.height * sourceScaleY));
       const exportCtx = exportCanvas.getContext("2d");
-      renderCombinedFrame(exportCtx, performance.now(), exportCanvas.width, exportCanvas.height);
+      renderCombinedFrame(exportCtx, performance.now(), exportCanvas.width, exportCanvas.height, bounds, background);
 
       const link = document.createElement("a");
       link.download = `shimmer-ink-${Date.now()}.png`;
@@ -1864,6 +2067,7 @@
     });
 
     buildInkPicker();
+    buildBackgroundPicker();
     setBrushSize(state.brushSize);
     updateModeButtons();
     updateActionButtons();
