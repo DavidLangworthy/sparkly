@@ -582,6 +582,12 @@
 
     const TAU = Math.PI * 2;
     const EXPORT_BACKGROUND = "#f6ecd8";
+    const GIF_ALPHA_DITHER_4X4 = [
+      0, 8, 2, 10,
+      12, 4, 14, 6,
+      3, 11, 1, 9,
+      15, 7, 13, 5
+    ];
 
     const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
     const lerp = (start, end, amount) => start + (end - start) * amount;
@@ -1724,9 +1730,24 @@
       ];
     }
 
-    function collectGifColorCounts(frame, counts) {
-      for (let index = 0; index < frame.data.length; index += 4) {
-        if (frame.data[index + 3] < 12) {
+    function isTransparentGifPixel(frame, pixelIndex, alpha) {
+      if (alpha <= 0) {
+        return true;
+      }
+
+      if (alpha >= 255) {
+        return false;
+      }
+
+      const x = pixelIndex % frame.width;
+      const y = Math.floor(pixelIndex / frame.width);
+      const threshold = (GIF_ALPHA_DITHER_4X4[(y & 3) * 4 + (x & 3)] + 0.5) / 16;
+      return alpha / 255 <= threshold;
+    }
+
+    function collectGifColorCounts(frame, counts, transparentBackground) {
+      for (let pixel = 0, index = 0; index < frame.data.length; index += 4, pixel += 1) {
+        if (transparentBackground && isTransparentGifPixel(frame, pixel, frame.data[index + 3])) {
           continue;
         }
 
@@ -1752,7 +1773,7 @@
 
     function buildGifPalette(frames, transparentBackground) {
       const counts = new Map();
-      frames.forEach((frame) => collectGifColorCounts(frame, counts));
+      frames.forEach((frame) => collectGifColorCounts(frame, counts, transparentBackground));
       return buildGifPaletteFromCounts(counts, transparentBackground);
     }
 
@@ -1762,7 +1783,7 @@
       const startIndex = transparentBackground ? 1 : 0;
 
       for (let pixel = 0, index = 0; index < frame.data.length; index += 4, pixel += 1) {
-        if (transparentBackground && frame.data[index + 3] < 12) {
+        if (transparentBackground && isTransparentGifPixel(frame, pixel, frame.data[index + 3])) {
           indexed[pixel] = 0;
           continue;
         }
@@ -1950,7 +1971,7 @@
 
         frameTimes.forEach((time) => {
           renderCombinedFrame(captureCtx, time, width, height, bounds, background);
-          collectGifColorCounts(captureCtx.getImageData(0, 0, width, height), paletteCounts);
+          collectGifColorCounts(captureCtx.getImageData(0, 0, width, height), paletteCounts, transparentBackground);
         });
 
         const palette = buildGifPaletteFromCounts(paletteCounts, transparentBackground);
