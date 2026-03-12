@@ -2054,59 +2054,35 @@
       const clearCode = 1 << minCodeSize;
       const endCode = clearCode + 1;
       const output = [];
-      let codeSize = minCodeSize + 1;
-      let nextCode = endCode + 1;
       let bitBuffer = 0;
       let bitCount = 0;
-      let dictionary = new Map();
+      const codeSize = minCodeSize + 1;
+      const resetInterval = Math.max(16, clearCode - 32);
 
       function writeCode(code) {
-        bitBuffer |= code << bitCount;
+        bitBuffer += code * (2 ** bitCount);
         bitCount += codeSize;
 
         while (bitCount >= 8) {
           output.push(bitBuffer & 255);
-          bitBuffer >>= 8;
+          bitBuffer = Math.floor(bitBuffer / 256);
           bitCount -= 8;
         }
       }
 
-      function resetDictionary() {
-        dictionary = new Map();
-        codeSize = minCodeSize + 1;
-        nextCode = endCode + 1;
-      }
-
-      resetDictionary();
+      let codesSinceClear = 0;
       writeCode(clearCode);
 
-      let phrase = String(indices[0]);
-      for (let index = 1; index < indices.length; index += 1) {
-        const symbol = indices[index];
-        const joined = `${phrase},${symbol}`;
-
-        if (dictionary.has(joined)) {
-          phrase = joined;
-          continue;
-        }
-
-        writeCode(phrase.includes(",") ? dictionary.get(phrase) : Number(phrase));
-
-        if (nextCode < 4096) {
-          dictionary.set(joined, nextCode);
-          nextCode += 1;
-          if (nextCode === (1 << codeSize) && codeSize < 12) {
-            codeSize += 1;
-          }
-        } else {
+      for (let index = 0; index < indices.length; index += 1) {
+        if (codesSinceClear >= resetInterval) {
           writeCode(clearCode);
-          resetDictionary();
+          codesSinceClear = 0;
         }
 
-        phrase = String(symbol);
+        writeCode(indices[index]);
+        codesSinceClear += 1;
       }
 
-      writeCode(phrase.includes(",") ? dictionary.get(phrase) : Number(phrase));
       writeCode(endCode);
 
       if (bitCount > 0) {
