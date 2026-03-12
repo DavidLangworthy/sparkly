@@ -808,20 +808,20 @@
         stretch: 1.24,
         squeeze: 0.8,
         pigmentAlpha: 0.82,
-        highlightAlpha: 0.32,
-        edgeAlpha: 0.05,
+        highlightAlpha: 0.46,
+        edgeAlpha: 0.2,
         glintStyle: "prism",
         palette: (stamp) => {
-          const hue = stamp.x * 0.18 + stamp.y * 0.08 + stamp.seed * 37;
+          const hue = stamp.progress * 72 + stamp.seed * 37;
           return [
             hsl(hue + 215, 74, 36, 0.92),
             hsl(hue + 8, 94, 58, 0.9),
             hsl(hue + 128, 82, 64, 0.84)
           ];
         },
-        shineColor: (stamp) => hsl(stamp.x * 0.1 + stamp.y * 0.04 + stamp.seed * 50 + 42, 100, 88, 0.72),
-        rimColor: (stamp) => hsl(stamp.x * 0.08 + stamp.y * 0.03 + stamp.seed * 40 + 180, 80, 80, 0.12),
-        shadowColor: (stamp) => hsl(stamp.x * 0.06 + stamp.y * 0.02 + stamp.seed * 32 + 228, 56, 24, 0.08),
+        shineColor: (stamp) => hsl(stamp.progress * 90 + stamp.seed * 50 + 42, 100, 88, 0.88),
+        rimColor: (stamp) => hsl(stamp.progress * 90 + stamp.seed * 50 + 180, 80, 80, 0.3),
+        shadowColor: (stamp) => hsl(stamp.progress * 90 + stamp.seed * 40 + 228, 56, 24, 0.14),
         sparkleColor: (node, time) => hsl(node.hueOffset + time * 0.05 + 200, 100, 74, 0.95)
       }),
       createInkPreset({
