@@ -1724,20 +1724,18 @@
       ];
     }
 
-    function buildGifPalette(frames, transparentBackground) {
-      const counts = new Map();
-
-      frames.forEach((frame) => {
-        for (let index = 0; index < frame.data.length; index += 4) {
-          if (frame.data[index + 3] < 12) {
-            continue;
-          }
-
-          const key = quantizeColor(frame.data[index], frame.data[index + 1], frame.data[index + 2]);
-          counts.set(key, (counts.get(key) || 0) + 1);
+    function collectGifColorCounts(frame, counts) {
+      for (let index = 0; index < frame.data.length; index += 4) {
+        if (frame.data[index + 3] < 12) {
+          continue;
         }
-      });
 
+        const key = quantizeColor(frame.data[index], frame.data[index + 1], frame.data[index + 2]);
+        counts.set(key, (counts.get(key) || 0) + 1);
+      }
+    }
+
+    function buildGifPaletteFromCounts(counts, transparentBackground) {
       const palette = transparentBackground ? [[0, 0, 0]] : [];
       palette.push(...Array.from(counts.entries())
         .sort((left, right) => right[1] - left[1])
@@ -1750,6 +1748,12 @@
       }
 
       return palette;
+    }
+
+    function buildGifPalette(frames, transparentBackground) {
+      const counts = new Map();
+      frames.forEach((frame) => collectGifColorCounts(frame, counts));
+      return buildGifPaletteFromCounts(counts, transparentBackground);
     }
 
     function mapFrameToPalette(frame, palette, transparentBackground) {
@@ -1869,9 +1873,7 @@
       writer.writeByte(0);
     }
 
-    function encodeGif(frames, width, height, delayCentiseconds, transparentBackground) {
-      const palette = buildGifPalette(frames, transparentBackground);
-      const minCodeSize = Math.max(2, Math.ceil(Math.log2(palette.length)));
+    function createGifWriter(width, height, palette) {
       const writer = new ByteWriter();
 
       writer.writeText("GIF89a");
@@ -1886,25 +1888,37 @@
       writer.writeText("NETSCAPE2.0");
       writer.writeBytes([0x03, 0x01, 0x00, 0x00, 0x00]);
 
-      frames.forEach((frame) => {
-        const indexed = mapFrameToPalette(frame, palette, transparentBackground);
-        writer.writeBytes([0x21, 0xF9, 0x04, transparentBackground ? 0x05 : 0x04]);
-        writer.writeShort(delayCentiseconds);
-        writer.writeByte(transparentBackground ? 0 : 0);
-        writer.writeByte(0);
+      return writer;
+    }
 
-        writer.writeByte(0x2C);
-        writer.writeShort(0);
-        writer.writeShort(0);
-        writer.writeShort(width);
-        writer.writeShort(height);
-        writer.writeByte(0);
-        writer.writeByte(minCodeSize);
-        writeSubBlocks(writer, lzwEncode(indexed, minCodeSize));
-      });
+    function appendGifFrame(writer, frame, palette, delayCentiseconds, transparentBackground) {
+      const minCodeSize = Math.max(2, Math.ceil(Math.log2(palette.length)));
+      const indexed = mapFrameToPalette(frame, palette, transparentBackground);
+      writer.writeBytes([0x21, 0xF9, 0x04, transparentBackground ? 0x05 : 0x04]);
+      writer.writeShort(delayCentiseconds);
+      writer.writeByte(transparentBackground ? 0 : 0);
+      writer.writeByte(0);
 
+      writer.writeByte(0x2C);
+      writer.writeShort(0);
+      writer.writeShort(0);
+      writer.writeShort(frame.width);
+      writer.writeShort(frame.height);
+      writer.writeByte(0);
+      writer.writeByte(minCodeSize);
+      writeSubBlocks(writer, lzwEncode(indexed, minCodeSize));
+    }
+
+    function finishGif(writer) {
       writer.writeByte(0x3B);
       return writer.toUint8Array();
+    }
+
+    function encodeGif(frames, width, height, delayCentiseconds, transparentBackground) {
+      const palette = buildGifPalette(frames, transparentBackground);
+      const writer = createGifWriter(width, height, palette);
+      frames.forEach((frame) => appendGifFrame(writer, frame, palette, delayCentiseconds, transparentBackground));
+      return finishGif(writer);
     }
 
     async function exportGif() {
@@ -1918,8 +1932,11 @@
       const loopDuration = 1800;
       const delayCentiseconds = Math.max(2, Math.round(loopDuration / frameCount / 10));
       const startTime = performance.now();
-      const frames = [];
       const originalLabel = gifButton.textContent;
+      const frameTimes = Array.from(
+        { length: frameCount },
+        (_, index) => startTime + (loopDuration / frameCount) * index
+      );
 
       captureCanvas.width = width;
       captureCanvas.height = height;
@@ -1928,14 +1945,24 @@
 
       try {
         await new Promise((resolve) => requestAnimationFrame(resolve));
-        for (let index = 0; index < frameCount; index += 1) {
-          const time = startTime + (loopDuration / frameCount) * index;
+        const transparentBackground = !background.color;
+        const paletteCounts = new Map();
+
+        frameTimes.forEach((time) => {
           renderCombinedFrame(captureCtx, time, width, height, bounds, background);
-          frames.push(captureCtx.getImageData(0, 0, width, height));
-        }
+          collectGifColorCounts(captureCtx.getImageData(0, 0, width, height), paletteCounts);
+        });
+
+        const palette = buildGifPaletteFromCounts(paletteCounts, transparentBackground);
+        const writer = createGifWriter(width, height, palette);
+
+        frameTimes.forEach((time) => {
+          renderCombinedFrame(captureCtx, time, width, height, bounds, background);
+          appendGifFrame(writer, captureCtx.getImageData(0, 0, width, height), palette, delayCentiseconds, transparentBackground);
+        });
 
         downloadBlob(
-          new Blob([encodeGif(frames, width, height, delayCentiseconds, !background.color)], { type: "image/gif" }),
+          new Blob([finishGif(writer)], { type: "image/gif" }),
           `shimmer-ink-${Date.now()}.gif`
         );
       } catch (error) {
