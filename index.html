@@ -641,7 +641,7 @@
           <strong id="activeInkName">Metallic Gold</strong>
           <span id="activeInkNote">Warm foil pigment with champagne glints and slick metallic streaks.</span>
         </div>
-        <div class="stage-hint">Draw with one finger, pencil, or pointer. Use two fingers or a trackpad to pan, and pinch to zoom around larger canvases.</div>
+        <div class="stage-hint">Draw with one finger, pencil, or pointer. Use two fingers or a trackpad to pan, pinch to zoom, or hold Space and drag.</div>
       </div>
 
       <div class="stage-viewport" id="stageViewport">
@@ -1124,6 +1124,7 @@
       strokes: [],
       activeStroke: null,
       isDrawing: false,
+      isSpacePanning: false,
       pointerId: null,
       sceneWidth: 0,
       sceneHeight: 0,
@@ -1162,6 +1163,14 @@
       startScale: 1,
       anchorSceneX: 0,
       anchorSceneY: 0
+    };
+    const panGesture = {
+      isActive: false,
+      pointerId: null,
+      startClientX: 0,
+      startClientY: 0,
+      startScrollLeft: 0,
+      startScrollTop: 0
     };
 
     function buildInkPicker() {
@@ -1303,6 +1312,20 @@
 
       canvasShell.style.width = `${Math.max(1, Math.round(state.sceneWidth * state.viewScale))}px`;
       canvasShell.style.height = `${Math.max(1, Math.round(state.sceneHeight * state.viewScale))}px`;
+    }
+
+    function updateCanvasCursor() {
+      if (panGesture.isActive) {
+        fxCanvas.style.cursor = "grabbing";
+        return;
+      }
+
+      fxCanvas.style.cursor = state.isSpacePanning ? "grab" : "crosshair";
+    }
+
+    function isEditableTarget(target) {
+      return target instanceof HTMLElement
+        && Boolean(target.closest("input, textarea, select, button, [contenteditable=\"\"], [contenteditable=\"true\"]"));
     }
 
     function getScenePointFromClient(clientX, clientY) {
@@ -2314,6 +2337,57 @@
       navigationGesture.anchorSceneY = anchorScenePoint.y;
     }
 
+    function beginViewportPan(event) {
+      if (event.pointerType === "touch") {
+        return false;
+      }
+
+      if (event.pointerType === "mouse" && event.button !== 0) {
+        return false;
+      }
+
+      event.preventDefault();
+      panGesture.isActive = true;
+      panGesture.pointerId = event.pointerId;
+      panGesture.startClientX = event.clientX;
+      panGesture.startClientY = event.clientY;
+      panGesture.startScrollLeft = stageViewport.scrollLeft;
+      panGesture.startScrollTop = stageViewport.scrollTop;
+      fxCanvas.setPointerCapture(event.pointerId);
+      updateCanvasCursor();
+      return true;
+    }
+
+    function updateViewportPan(event) {
+      if (!panGesture.isActive || event.pointerId !== panGesture.pointerId) {
+        return false;
+      }
+
+      event.preventDefault();
+      stageViewport.scrollLeft = panGesture.startScrollLeft - (event.clientX - panGesture.startClientX);
+      stageViewport.scrollTop = panGesture.startScrollTop - (event.clientY - panGesture.startClientY);
+      return true;
+    }
+
+    function endViewportPan(event = null) {
+      if (!panGesture.isActive) {
+        return false;
+      }
+
+      if (event && event.pointerId !== panGesture.pointerId) {
+        return false;
+      }
+
+      const capturedPointerId = panGesture.pointerId;
+      panGesture.isActive = false;
+      panGesture.pointerId = null;
+      if (capturedPointerId != null && fxCanvas.hasPointerCapture(capturedPointerId)) {
+        fxCanvas.releasePointerCapture(capturedPointerId);
+      }
+      updateCanvasCursor();
+      return true;
+    }
+
     function updateNavigationGesture() {
       if (!navigationGesture.isActive || navigationGesture.touchPoints.size < 2) {
         return;
@@ -2330,6 +2404,10 @@
     }
 
     function handlePointerDown(event) {
+      if (state.isSpacePanning && beginViewportPan(event)) {
+        return;
+      }
+
       if (event.pointerType === "touch") {
         navigationGesture.touchPoints.set(event.pointerId, {
           x: event.clientX,
@@ -2346,6 +2424,10 @@
     }
 
     function handlePointerMove(event) {
+      if (updateViewportPan(event)) {
+        return;
+      }
+
       if (event.pointerType === "touch" && navigationGesture.touchPoints.has(event.pointerId)) {
         navigationGesture.touchPoints.set(event.pointerId, {
           x: event.clientX,
@@ -2363,6 +2445,10 @@
     }
 
     function handlePointerUp(event) {
+      if (endViewportPan(event)) {
+        return;
+      }
+
       if (event.pointerType === "touch" && navigationGesture.touchPoints.has(event.pointerId)) {
         const wasNavigating = navigationGesture.isActive;
         navigationGesture.touchPoints.delete(event.pointerId);
@@ -2376,6 +2462,10 @@
     }
 
     function handlePointerCancel(event) {
+      if (endViewportPan(event)) {
+        return;
+      }
+
       if (event.pointerType === "touch" && navigationGesture.touchPoints.has(event.pointerId)) {
         const wasNavigating = navigationGesture.isActive;
         navigationGesture.touchPoints.delete(event.pointerId);
@@ -2389,6 +2479,10 @@
     }
 
     function handleLostPointerCapture(event) {
+      if (endViewportPan(event)) {
+        return;
+      }
+
       if (navigationGesture.isActive) {
         return;
       }
@@ -2413,6 +2507,37 @@
       }
 
       applySceneSize(Number(canvasWidthInput.value), Number(canvasHeightInput.value));
+    }
+
+    function handleWindowKeyDown(event) {
+      if (event.code !== "Space" || isEditableTarget(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+      if (!state.isSpacePanning) {
+        state.isSpacePanning = true;
+        updateCanvasCursor();
+      }
+    }
+
+    function handleWindowKeyUp(event) {
+      if (event.code !== "Space") {
+        return;
+      }
+
+      if (state.isSpacePanning) {
+        event.preventDefault();
+        state.isSpacePanning = false;
+        endViewportPan();
+        updateCanvasCursor();
+      }
+    }
+
+    function handleWindowBlur() {
+      state.isSpacePanning = false;
+      endViewportPan();
+      updateCanvasCursor();
     }
 
     function undoLastStroke() {
@@ -2486,6 +2611,9 @@
     fxCanvas.addEventListener("pointercancel", handlePointerCancel);
     fxCanvas.addEventListener("lostpointercapture", handleLostPointerCapture);
     fxCanvas.addEventListener("contextmenu", (event) => event.preventDefault());
+    window.addEventListener("keydown", handleWindowKeyDown);
+    window.addEventListener("keyup", handleWindowKeyUp);
+    window.addEventListener("blur", handleWindowBlur);
 
     buildInkPicker();
     buildBackgroundPicker();
@@ -2494,6 +2622,7 @@
     updateActionButtons();
     updateCanvasBackground();
     initializeStage();
+    updateCanvasCursor();
     requestAnimationFrame(animate);
   </script>
 </body>
