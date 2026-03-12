@@ -294,6 +294,47 @@
       box-shadow: var(--shadow-soft);
     }
 
+    .size-card {
+      display: grid;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .size-grid {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 8px;
+    }
+
+    .size-field {
+      display: grid;
+      gap: 4px;
+      min-width: 78px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8d7050;
+    }
+
+    .size-field input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(128, 97, 60, 0.16);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--ink);
+    }
+
+    .size-apply {
+      padding-inline: 12px;
+    }
+
     .background-grid {
       display: flex;
       flex-wrap: wrap;
@@ -391,9 +432,28 @@
       font-size: 0.92rem;
     }
 
-    .canvas-shell {
+    .stage-viewport {
       position: relative;
       min-height: clamp(360px, 58vh, 860px);
+      overflow: auto;
+      border-radius: 26px;
+      border: 1px solid rgba(114, 81, 49, 0.16);
+      background:
+        radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.72), transparent 30%),
+        linear-gradient(180deg, rgba(255, 249, 237, 0.98) 0%, rgba(238, 223, 197, 0.96) 100%);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.54),
+        inset 0 24px 40px rgba(255, 255, 255, 0.12),
+        inset 0 -18px 30px rgba(151, 121, 80, 0.08);
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .canvas-shell {
+      position: relative;
+      width: 0;
+      height: 0;
+      margin: 18px auto;
       border-radius: 26px;
       overflow: hidden;
       border: 1px solid rgba(114, 81, 49, 0.16);
@@ -493,6 +553,7 @@
 
       .slider-card,
       .segmented,
+      .size-card,
       .background-card,
       .actions {
         width: 100%;
@@ -507,7 +568,7 @@
         width: 100%;
       }
 
-      .canvas-shell {
+      .stage-viewport {
         min-height: 52vh;
       }
     }
@@ -547,6 +608,21 @@
             <div id="backgroundPicker" class="background-grid" role="list" aria-label="Export background"></div>
           </div>
 
+          <form class="size-card" id="canvasSizeForm">
+            <span class="group-label">Canvas Size</span>
+            <div class="size-grid">
+              <label class="size-field" for="canvasWidthInput">
+                Width
+                <input id="canvasWidthInput" type="number" min="320" max="4096" step="10" inputmode="numeric" value="0">
+              </label>
+              <label class="size-field" for="canvasHeightInput">
+                Height
+                <input id="canvasHeightInput" type="number" min="320" max="4096" step="10" inputmode="numeric" value="0">
+              </label>
+              <button class="action-button size-apply" type="submit">Resize</button>
+            </div>
+          </form>
+
           <div class="actions">
             <button class="action-button" id="undoButton" type="button">Undo</button>
             <button class="action-button" id="clearButton" type="button">Clear</button>
@@ -565,12 +641,14 @@
           <strong id="activeInkName">Metallic Gold</strong>
           <span id="activeInkNote">Warm foil pigment with champagne glints and slick metallic streaks.</span>
         </div>
-        <div class="stage-hint">Drag anywhere on the surface. Finished strokes keep shimmering until you clear them.</div>
+        <div class="stage-hint">Draw with one finger, pencil, or pointer. Use two fingers or a trackpad to pan, and pinch to zoom around larger canvases.</div>
       </div>
 
-      <div class="canvas-shell" id="canvasShell">
-        <canvas id="paintCanvas" aria-hidden="true"></canvas>
-        <canvas id="fxCanvas" aria-label="Drawing surface"></canvas>
+      <div class="stage-viewport" id="stageViewport">
+        <div class="canvas-shell" id="canvasShell">
+          <canvas id="paintCanvas" aria-hidden="true"></canvas>
+          <canvas id="fxCanvas" aria-label="Drawing surface"></canvas>
+        </div>
       </div>
     </section>
   </main>
@@ -582,6 +660,10 @@
 
     const TAU = Math.PI * 2;
     const EXPORT_BACKGROUND = "#f6ecd8";
+    const MIN_SCENE_DIMENSION = 320;
+    const MAX_SCENE_DIMENSION = 4096;
+    const MIN_VIEW_SCALE = 0.5;
+    const MAX_VIEW_SCALE = 2.5;
     const GIF_ALPHA_DITHER_4X4 = [
       0, 8, 2, 10,
       12, 4, 14, 6,
@@ -1044,7 +1126,8 @@
       isDrawing: false,
       pointerId: null,
       sceneWidth: 0,
-      sceneHeight: 0
+      sceneHeight: 0,
+      viewScale: 1
     };
 
     const inkPicker = document.getElementById("inkPicker");
@@ -1058,9 +1141,13 @@
     const openButton = document.getElementById("openButton");
     const exportButton = document.getElementById("exportButton");
     const gifButton = document.getElementById("gifButton");
+    const canvasSizeForm = document.getElementById("canvasSizeForm");
+    const canvasWidthInput = document.getElementById("canvasWidthInput");
+    const canvasHeightInput = document.getElementById("canvasHeightInput");
     const projectInput = document.getElementById("projectInput");
     const activeInkName = document.getElementById("activeInkName");
     const activeInkNote = document.getElementById("activeInkNote");
+    const stageViewport = document.getElementById("stageViewport");
     const canvasShell = document.getElementById("canvasShell");
     const paintCanvas = document.getElementById("paintCanvas");
     const fxCanvas = document.getElementById("fxCanvas");
@@ -1068,6 +1155,14 @@
     const fxCtx = fxCanvas.getContext("2d");
     const exportSparkleCanvas = document.createElement("canvas");
     const exportSparkleCtx = exportSparkleCanvas.getContext("2d");
+    const navigationGesture = {
+      touchPoints: new Map(),
+      isActive: false,
+      startDistance: 0,
+      startScale: 1,
+      anchorSceneX: 0,
+      anchorSceneY: 0
+    };
 
     function buildInkPicker() {
       const fragment = document.createDocumentFragment();
@@ -1187,12 +1282,77 @@
       brushValue.textContent = `${nextSize} px`;
     }
 
+    function clampSceneDimension(value, fallback) {
+      const numericValue = Number.isFinite(value) ? value : fallback;
+      return clamp(Math.round(numericValue), MIN_SCENE_DIMENSION, MAX_SCENE_DIMENSION);
+    }
+
+    function syncCanvasSizeInputs() {
+      if (!state.sceneWidth || !state.sceneHeight) {
+        return;
+      }
+
+      canvasWidthInput.value = String(state.sceneWidth);
+      canvasHeightInput.value = String(state.sceneHeight);
+    }
+
+    function syncCanvasDisplaySize() {
+      if (!state.sceneWidth || !state.sceneHeight) {
+        return;
+      }
+
+      canvasShell.style.width = `${Math.max(1, Math.round(state.sceneWidth * state.viewScale))}px`;
+      canvasShell.style.height = `${Math.max(1, Math.round(state.sceneHeight * state.viewScale))}px`;
+    }
+
+    function getScenePointFromClient(clientX, clientY) {
+      const rect = fxCanvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) {
+        return {
+          x: state.sceneWidth * 0.5,
+          y: state.sceneHeight * 0.5
+        };
+      }
+
+      return {
+        x: clamp(((clientX - rect.left) / rect.width) * state.sceneWidth, 0, state.sceneWidth),
+        y: clamp(((clientY - rect.top) / rect.height) * state.sceneHeight, 0, state.sceneHeight)
+      };
+    }
+
+    function getViewportCenterClientPoint() {
+      const rect = stageViewport.getBoundingClientRect();
+      return {
+        x: rect.left + rect.width * 0.5,
+        y: rect.top + rect.height * 0.5
+      };
+    }
+
+    function setViewScale(nextScale, anchorClientX = null, anchorClientY = null, anchorScenePoint = null) {
+      const clampedScale = clamp(nextScale, MIN_VIEW_SCALE, MAX_VIEW_SCALE);
+
+      if (!state.sceneWidth || !state.sceneHeight) {
+        state.viewScale = clampedScale;
+        syncCanvasDisplaySize();
+        return;
+      }
+
+      const viewportRect = stageViewport.getBoundingClientRect();
+      const clientX = anchorClientX == null ? viewportRect.left + viewportRect.width * 0.5 : anchorClientX;
+      const clientY = anchorClientY == null ? viewportRect.top + viewportRect.height * 0.5 : anchorClientY;
+      const scenePoint = anchorScenePoint || getScenePointFromClient(clientX, clientY);
+
+      state.viewScale = clampedScale;
+      syncCanvasDisplaySize();
+
+      stageViewport.scrollLeft = canvasShell.offsetLeft + scenePoint.x * state.viewScale - (clientX - viewportRect.left);
+      stageViewport.scrollTop = canvasShell.offsetTop + scenePoint.y * state.viewScale - (clientY - viewportRect.top);
+    }
+
     function configureCanvas(canvas, ctx, width, height) {
       const dpr = Math.max(window.devicePixelRatio || 1, 1);
       canvas.width = Math.max(1, Math.round(width * dpr));
       canvas.height = Math.max(1, Math.round(height * dpr));
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, width, height);
       ctx.lineCap = "round";
@@ -1283,56 +1443,51 @@
       };
     }
 
-    function resizeStage() {
-      const rect = canvasShell.getBoundingClientRect();
-      const width = Math.max(320, Math.round(rect.width));
-      const height = Math.max(320, Math.round(rect.height));
-
-      if (width === state.sceneWidth && height === state.sceneHeight) {
-        return;
-      }
-
-      const oldWidth = state.sceneWidth;
-      const oldHeight = state.sceneHeight;
-      let snapshot = null;
-
-      if (oldWidth > 0 && oldHeight > 0) {
-        snapshot = document.createElement("canvas");
-        snapshot.width = paintCanvas.width;
-        snapshot.height = paintCanvas.height;
-        snapshot.getContext("2d").drawImage(paintCanvas, 0, 0);
-      }
+    function applySceneSize(nextWidth, nextHeight, preserveView = true) {
+      const width = clampSceneDimension(nextWidth, state.sceneWidth || stageViewport.clientWidth || 960);
+      const height = clampSceneDimension(nextHeight, state.sceneHeight || stageViewport.clientHeight || 720);
+      const hadScene = state.sceneWidth > 0 && state.sceneHeight > 0;
+      const viewportCenter = getViewportCenterClientPoint();
+      const centerScenePoint = hadScene && preserveView ? getScenePointFromClient(viewportCenter.x, viewportCenter.y) : null;
 
       state.sceneWidth = width;
       state.sceneHeight = height;
 
       configureCanvas(paintCanvas, paintCtx, width, height);
       configureCanvas(fxCanvas, fxCtx, width, height);
-
-      if (snapshot) {
-        paintCtx.save();
-        paintCtx.setTransform(1, 0, 0, 1, 0, 0);
-        paintCtx.drawImage(snapshot, 0, 0, snapshot.width, snapshot.height, 0, 0, paintCanvas.width, paintCanvas.height);
-        paintCtx.restore();
-      }
-
-      if (oldWidth > 0 && oldHeight > 0) {
-        const scaleX = width / oldWidth;
-        const scaleY = height / oldHeight;
-        state.strokes.forEach((stroke) => scaleStroke(stroke, scaleX, scaleY));
-        if (state.activeStroke) {
-          scaleStroke(state.activeStroke, scaleX, scaleY);
-        }
-      }
-
+      syncCanvasDisplaySize();
+      syncCanvasSizeInputs();
       redrawPaint();
+
+      if (centerScenePoint) {
+        setViewScale(state.viewScale, viewportCenter.x, viewportCenter.y, centerScenePoint);
+        return;
+      }
+
+      stageViewport.scrollLeft = Math.max(0, Math.round((canvasShell.offsetWidth - stageViewport.clientWidth) * 0.5));
+      stageViewport.scrollTop = Math.max(0, Math.round((canvasShell.offsetHeight - stageViewport.clientHeight) * 0.5));
+    }
+
+    function initializeStage() {
+      const width = clampSceneDimension(stageViewport.clientWidth - 36, 960);
+      const height = clampSceneDimension(stageViewport.clientHeight - 36, 720);
+      applySceneSize(width, height, false);
     }
 
     function getCanvasPoint(event) {
       const rect = fxCanvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) {
+        return {
+          x: state.sceneWidth * 0.5,
+          y: state.sceneHeight * 0.5,
+          t: performance.now(),
+          pressure: event.pressure && event.pressure > 0 ? clamp(event.pressure, 0.2, 1) : 0.58
+        };
+      }
+
       return {
-        x: clamp(event.clientX - rect.left, 0, rect.width),
-        y: clamp(event.clientY - rect.top, 0, rect.height),
+        x: clamp(((event.clientX - rect.left) / rect.width) * state.sceneWidth, 0, state.sceneWidth),
+        y: clamp(((event.clientY - rect.top) / rect.height) * state.sceneHeight, 0, state.sceneHeight),
         t: performance.now(),
         pressure: event.pressure && event.pressure > 0 ? clamp(event.pressure, 0.2, 1) : 0.58
       };
@@ -1692,7 +1847,16 @@
           throw new Error("Unsupported project format");
         }
 
+        const importedSceneWidth = Number.isFinite(raw.sceneWidth) && raw.sceneWidth > 0
+          ? clampSceneDimension(raw.sceneWidth, state.sceneWidth || 960)
+          : state.sceneWidth;
+        const importedSceneHeight = Number.isFinite(raw.sceneHeight) && raw.sceneHeight > 0
+          ? clampSceneDimension(raw.sceneHeight, state.sceneHeight || 720)
+          : state.sceneHeight;
         const importedStrokes = raw.strokes.map(sanitizeStroke).filter(Boolean);
+        if (importedSceneWidth && importedSceneHeight) {
+          applySceneSize(importedSceneWidth, importedSceneHeight, false);
+        }
         state.strokes = importedStrokes;
         state.activeStroke = null;
         state.isDrawing = false;
@@ -1709,12 +1873,6 @@
         }
         if (backgroundById.has(raw.exportBackgroundId)) {
           state.exportBackgroundId = raw.exportBackgroundId;
-        }
-
-        if (Number.isFinite(raw.sceneWidth) && Number.isFinite(raw.sceneHeight) && raw.sceneWidth > 0 && raw.sceneHeight > 0) {
-          const scaleX = state.sceneWidth / raw.sceneWidth;
-          const scaleY = state.sceneHeight / raw.sceneHeight;
-          state.strokes.forEach((stroke) => scaleStroke(stroke, scaleX, scaleY));
         }
 
         updateInkButtons();
@@ -2044,6 +2202,22 @@
       }
     }
 
+    function finishActiveStroke(commitStroke = true) {
+      const capturedPointerId = state.pointerId;
+
+      if (commitStroke && state.activeStroke) {
+        state.strokes.push(state.activeStroke);
+      }
+
+      state.activeStroke = null;
+      state.isDrawing = false;
+      state.pointerId = null;
+      if (capturedPointerId != null && fxCanvas.hasPointerCapture(capturedPointerId)) {
+        fxCanvas.releasePointerCapture(capturedPointerId);
+      }
+      updateActionButtons();
+    }
+
     function beginStroke(event) {
       if (state.isDrawing) {
         return;
@@ -2091,17 +2265,7 @@
       }
 
       event.preventDefault();
-      if (state.activeStroke) {
-        state.strokes.push(state.activeStroke);
-      }
-
-      state.activeStroke = null;
-      state.isDrawing = false;
-      state.pointerId = null;
-      if (fxCanvas.hasPointerCapture(event.pointerId)) {
-        fxCanvas.releasePointerCapture(event.pointerId);
-      }
-      updateActionButtons();
+      finishActiveStroke(true);
     }
 
     function cancelStroke(event) {
@@ -2109,7 +2273,146 @@
         return;
       }
 
+      event.preventDefault();
+      finishActiveStroke(false);
+    }
+
+    function getNavigationGestureTouches() {
+      return Array.from(navigationGesture.touchPoints.values());
+    }
+
+    function getNavigationGestureMetrics() {
+      const touches = getNavigationGestureTouches();
+      const [firstTouch, secondTouch] = touches;
+      const center = {
+        x: (firstTouch.x + secondTouch.x) * 0.5,
+        y: (firstTouch.y + secondTouch.y) * 0.5
+      };
+      const distance = Math.hypot(secondTouch.x - firstTouch.x, secondTouch.y - firstTouch.y);
+
+      return { center, distance };
+    }
+
+    function beginNavigationGesture() {
+      if (navigationGesture.touchPoints.size < 2) {
+        return;
+      }
+
+      if (state.isDrawing) {
+        const shouldCommitStroke = state.activeStroke
+          && (state.activeStroke.pathLength > Math.max(6, state.activeStroke.brushSize * 0.35) || state.activeStroke.points.length > 2);
+        finishActiveStroke(shouldCommitStroke);
+      }
+
+      const { center, distance } = getNavigationGestureMetrics();
+      const anchorScenePoint = getScenePointFromClient(center.x, center.y);
+
+      navigationGesture.isActive = true;
+      navigationGesture.startDistance = Math.max(distance, 1);
+      navigationGesture.startScale = state.viewScale;
+      navigationGesture.anchorSceneX = anchorScenePoint.x;
+      navigationGesture.anchorSceneY = anchorScenePoint.y;
+    }
+
+    function updateNavigationGesture() {
+      if (!navigationGesture.isActive || navigationGesture.touchPoints.size < 2) {
+        return;
+      }
+
+      const { center, distance } = getNavigationGestureMetrics();
+      const scaleRatio = navigationGesture.startDistance > 0 ? distance / navigationGesture.startDistance : 1;
+      setViewScale(
+        navigationGesture.startScale * scaleRatio,
+        center.x,
+        center.y,
+        { x: navigationGesture.anchorSceneX, y: navigationGesture.anchorSceneY }
+      );
+    }
+
+    function handlePointerDown(event) {
+      if (event.pointerType === "touch") {
+        navigationGesture.touchPoints.set(event.pointerId, {
+          x: event.clientX,
+          y: event.clientY
+        });
+        if (navigationGesture.touchPoints.size >= 2) {
+          event.preventDefault();
+          beginNavigationGesture();
+          return;
+        }
+      }
+
+      beginStroke(event);
+    }
+
+    function handlePointerMove(event) {
+      if (event.pointerType === "touch" && navigationGesture.touchPoints.has(event.pointerId)) {
+        navigationGesture.touchPoints.set(event.pointerId, {
+          x: event.clientX,
+          y: event.clientY
+        });
+
+        if (navigationGesture.isActive) {
+          event.preventDefault();
+          updateNavigationGesture();
+          return;
+        }
+      }
+
+      extendStroke(event);
+    }
+
+    function handlePointerUp(event) {
+      if (event.pointerType === "touch" && navigationGesture.touchPoints.has(event.pointerId)) {
+        const wasNavigating = navigationGesture.isActive;
+        navigationGesture.touchPoints.delete(event.pointerId);
+        if (wasNavigating) {
+          navigationGesture.isActive = navigationGesture.touchPoints.size >= 2;
+          return;
+        }
+      }
+
       finishStroke(event);
+    }
+
+    function handlePointerCancel(event) {
+      if (event.pointerType === "touch" && navigationGesture.touchPoints.has(event.pointerId)) {
+        const wasNavigating = navigationGesture.isActive;
+        navigationGesture.touchPoints.delete(event.pointerId);
+        if (wasNavigating) {
+          navigationGesture.isActive = navigationGesture.touchPoints.size >= 2;
+          return;
+        }
+      }
+
+      cancelStroke(event);
+    }
+
+    function handleLostPointerCapture(event) {
+      if (navigationGesture.isActive) {
+        return;
+      }
+
+      cancelStroke(event);
+    }
+
+    function handleStageWheel(event) {
+      if (!event.ctrlKey) {
+        return;
+      }
+
+      event.preventDefault();
+      setViewScale(state.viewScale * Math.exp(-event.deltaY * 0.002), event.clientX, event.clientY);
+    }
+
+    function handleCanvasSizeSubmit(event) {
+      event.preventDefault();
+
+      if (state.isDrawing) {
+        finishActiveStroke(true);
+      }
+
+      applySceneSize(Number(canvasWidthInput.value), Number(canvasHeightInput.value));
     }
 
     function undoLastStroke() {
@@ -2174,19 +2477,15 @@
     openButton.addEventListener("click", () => projectInput.click());
     exportButton.addEventListener("click", exportPng);
     gifButton.addEventListener("click", exportGif);
+    canvasSizeForm.addEventListener("submit", handleCanvasSizeSubmit);
     projectInput.addEventListener("change", openProjectFile);
-    fxCanvas.addEventListener("pointerdown", beginStroke);
-    fxCanvas.addEventListener("pointermove", extendStroke);
-    fxCanvas.addEventListener("pointerup", finishStroke);
-    fxCanvas.addEventListener("pointercancel", cancelStroke);
-    fxCanvas.addEventListener("lostpointercapture", cancelStroke);
+    stageViewport.addEventListener("wheel", handleStageWheel, { passive: false });
+    fxCanvas.addEventListener("pointerdown", handlePointerDown);
+    fxCanvas.addEventListener("pointermove", handlePointerMove);
+    fxCanvas.addEventListener("pointerup", handlePointerUp);
+    fxCanvas.addEventListener("pointercancel", handlePointerCancel);
+    fxCanvas.addEventListener("lostpointercapture", handleLostPointerCapture);
     fxCanvas.addEventListener("contextmenu", (event) => event.preventDefault());
-
-    let resizeFrame = 0;
-    window.addEventListener("resize", () => {
-      cancelAnimationFrame(resizeFrame);
-      resizeFrame = requestAnimationFrame(resizeStage);
-    });
 
     buildInkPicker();
     buildBackgroundPicker();
@@ -2194,7 +2493,7 @@
     updateModeButtons();
     updateActionButtons();
     updateCanvasBackground();
-    resizeStage();
+    initializeStage();
     requestAnimationFrame(animate);
   </script>
 </body>
