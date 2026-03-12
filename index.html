@@ -1,0 +1,1874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shimmer Ink Studio</title>
+  <style>
+    :root {
+      --paper-flat: #f5ebda;
+      --paper-glow: #fffaf1;
+      --paper-shadow: #decaa6;
+      --ink: #2c2016;
+      --muted: #6b5845;
+      --panel: rgba(255, 248, 236, 0.82);
+      --panel-strong: rgba(255, 251, 243, 0.92);
+      --line: rgba(99, 72, 42, 0.16);
+      --focus: #8b4f10;
+      --shadow-xl: 0 24px 60px rgba(76, 44, 18, 0.18);
+      --shadow-soft: 0 12px 24px rgba(110, 74, 43, 0.12);
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    body {
+      font-family: "Trebuchet MS", "Gill Sans", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.95), transparent 34%),
+        radial-gradient(circle at 80% 18%, rgba(255, 226, 170, 0.55), transparent 30%),
+        linear-gradient(180deg, #fff9ef 0%, #f1e4c8 48%, #ead8b5 100%);
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0, rgba(255, 255, 255, 0.12) 1px, transparent 1px, transparent 36px),
+        linear-gradient(rgba(115, 80, 42, 0.04) 0, rgba(115, 80, 42, 0.04) 1px, transparent 1px, transparent 36px);
+      mask-image: radial-gradient(circle at center, black 42%, transparent 100%);
+      opacity: 0.36;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--focus) 45%, white);
+      outline-offset: 2px;
+    }
+
+    .app-shell {
+      height: 100vh;
+      padding: 22px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 18px;
+      max-width: 1480px;
+      margin: 0 auto;
+    }
+
+    .hero-panel,
+    .stage-panel {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(122, 86, 52, 0.12);
+      border-radius: 30px;
+      background: var(--panel);
+      box-shadow: var(--shadow-xl);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero-panel {
+      padding: 24px 24px 20px;
+      display: grid;
+      gap: 18px;
+      background:
+        radial-gradient(circle at top right, rgba(255, 217, 149, 0.34), transparent 32%),
+        radial-gradient(circle at 18% -10%, rgba(255, 255, 255, 0.9), transparent 30%),
+        var(--panel);
+      animation: rise-in 0.65s ease-out both;
+    }
+
+    .hero-copy {
+      display: grid;
+      gap: 8px;
+      max-width: 720px;
+    }
+
+    .eyebrow {
+      margin: 0;
+      font-size: 0.8rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: #886846;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: Baskerville, "Palatino Linotype", "Book Antiqua", serif;
+      font-size: clamp(2.3rem, 5vw, 4.5rem);
+      line-height: 0.94;
+      letter-spacing: -0.03em;
+      text-wrap: balance;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+
+    .lede {
+      margin: 0;
+      max-width: 64ch;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.45;
+    }
+
+    .toolbar {
+      display: grid;
+      gap: 16px;
+    }
+
+    .toolbar-section {
+      display: grid;
+      gap: 10px;
+    }
+
+    .toolbar-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px 16px;
+    }
+
+    .group-label {
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #8d7050;
+    }
+
+    .ink-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .ink-chip {
+      position: relative;
+      display: grid;
+      align-items: end;
+      width: min(150px, calc(50vw - 34px));
+      min-height: 62px;
+      padding: 12px 12px 10px;
+      border-radius: 18px;
+      border: 1px solid rgba(91, 64, 36, 0.14);
+      color: #2e2218;
+      text-align: left;
+      background:
+        linear-gradient(125deg, var(--swatch-1), var(--swatch-2) 55%, var(--swatch-3)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 10px 18px rgba(96, 58, 20, 0.08);
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .ink-chip::before {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: 17px;
+      background:
+        radial-gradient(circle at 22% 24%, rgba(255, 255, 255, 0.75), transparent 32%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent 42%);
+      pointer-events: none;
+    }
+
+    .ink-chip:hover {
+      transform: translateY(-1px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82), 0 14px 22px rgba(96, 58, 20, 0.12);
+    }
+
+    .ink-chip.is-active {
+      border-color: rgba(94, 50, 9, 0.36);
+      box-shadow: 0 0 0 3px rgba(183, 127, 48, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 18px 28px rgba(96, 58, 20, 0.14);
+      transform: translateY(-2px);
+    }
+
+    .ink-chip__label {
+      position: relative;
+      font-size: 0.83rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+    }
+
+    .slider-card,
+    .segmented,
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .slider-card {
+      flex: 1 1 220px;
+      justify-content: space-between;
+      min-width: 220px;
+    }
+
+    .slider-label {
+      display: grid;
+      gap: 4px;
+      min-width: 120px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .slider-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .slider-card input[type="range"] {
+      width: min(42vw, 220px);
+      accent-color: #9f6920;
+    }
+
+    .segmented {
+      gap: 8px;
+    }
+
+    .segment-button,
+    .action-button {
+      position: relative;
+      padding: 11px 14px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 700;
+      transition: background 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    .segment-button:hover,
+    .action-button:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .segment-button.is-active {
+      color: var(--ink);
+      border-color: rgba(124, 86, 44, 0.18);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 247, 230, 0.82)),
+        linear-gradient(135deg, rgba(247, 201, 120, 0.16), rgba(255, 255, 255, 0));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .actions {
+      margin-left: auto;
+      flex-wrap: wrap;
+    }
+
+    .action-button {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.46);
+      border-color: rgba(128, 97, 60, 0.12);
+    }
+
+    .action-button--primary {
+      background:
+        linear-gradient(180deg, rgba(255, 251, 241, 0.95), rgba(255, 224, 170, 0.82)),
+        linear-gradient(135deg, rgba(182, 110, 16, 0.2), rgba(255, 255, 255, 0));
+    }
+
+    .action-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
+      transform: none;
+    }
+
+    .stage-panel {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 12px;
+      min-height: 0;
+      padding: 16px;
+      animation: rise-in 0.7s 90ms ease-out both;
+    }
+
+    .stage-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 4px 6px 0;
+    }
+
+    .ink-readout {
+      display: grid;
+      gap: 4px;
+    }
+
+    .ink-readout strong {
+      font-family: Baskerville, "Palatino Linotype", serif;
+      font-size: 1.2rem;
+      letter-spacing: 0.01em;
+    }
+
+    .ink-readout span,
+    .stage-hint {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .canvas-shell {
+      position: relative;
+      min-height: clamp(360px, 58vh, 860px);
+      border-radius: 26px;
+      overflow: hidden;
+      border: 1px solid rgba(114, 81, 49, 0.16);
+      background:
+        radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.82), transparent 24%),
+        radial-gradient(circle at 80% 0%, rgba(255, 232, 189, 0.72), transparent 28%),
+        linear-gradient(180deg, #fff8eb 0%, #f6ecd8 48%, #efdfc0 100%);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.54),
+        inset 0 24px 40px rgba(255, 255, 255, 0.18),
+        inset 0 -26px 40px rgba(151, 121, 80, 0.12);
+    }
+
+    .canvas-shell::before,
+    .canvas-shell::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .canvas-shell::before {
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0, rgba(255, 255, 255, 0.08) 1px, transparent 1px, transparent 32px),
+        linear-gradient(rgba(141, 106, 68, 0.045) 0, rgba(141, 106, 68, 0.045) 1px, transparent 1px, transparent 32px);
+      opacity: 0.45;
+      mix-blend-mode: multiply;
+    }
+
+    .canvas-shell::after {
+      inset: auto 16px 16px auto;
+      width: 180px;
+      height: 60px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.55), transparent 72%);
+      opacity: 0.4;
+      transform: rotate(-10deg);
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #paintCanvas {
+      pointer-events: none;
+    }
+
+    #fxCanvas {
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    @keyframes rise-in {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 900px) {
+      body {
+        overflow: auto;
+      }
+
+      .app-shell {
+        height: auto;
+        min-height: 100vh;
+      }
+
+      .actions {
+        margin-left: 0;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app-shell {
+        padding: 14px;
+      }
+
+      .hero-panel,
+      .stage-panel {
+        border-radius: 24px;
+      }
+
+      .hero-panel {
+        padding: 18px 16px 16px;
+      }
+
+      .stage-panel {
+        padding: 12px;
+      }
+
+      .slider-card,
+      .segmented,
+      .actions {
+        width: 100%;
+      }
+
+      .slider-card {
+        align-items: stretch;
+        gap: 14px;
+      }
+
+      .slider-card input[type="range"] {
+        width: 100%;
+      }
+
+      .canvas-shell {
+        min-height: 52vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero-panel">
+      <div class="hero-copy">
+        <p class="eyebrow">Shimmer Ink Studio</p>
+        <h1>Draw with inks that keep glittering.</h1>
+        <p class="lede">Paint with metallic foils, rainbow chrome, pearl dust, ember glitter, and stranger finishes that continue to shimmer after every stroke.</p>
+      </div>
+
+      <div class="toolbar" aria-label="Drawing controls">
+        <div class="toolbar-section">
+          <span class="group-label">Ink Shelf</span>
+          <div id="inkPicker" class="ink-grid" role="list"></div>
+        </div>
+
+        <div class="toolbar-row">
+          <div class="slider-card">
+            <label class="slider-label" for="brushSize">
+              Brush Size
+              <span class="slider-value" id="brushValue">20 px</span>
+            </label>
+            <input id="brushSize" type="range" min="6" max="48" step="1" value="20" aria-label="Brush size">
+          </div>
+
+          <div class="segmented" role="group" aria-label="Drawing mode">
+            <button class="segment-button is-active" type="button" data-mode="brush" aria-pressed="true">Brush</button>
+            <button class="segment-button" type="button" data-mode="spray" aria-pressed="false">Spray</button>
+          </div>
+
+          <div class="actions">
+            <button class="action-button" id="undoButton" type="button">Undo</button>
+            <button class="action-button" id="clearButton" type="button">Clear</button>
+            <button class="action-button" id="saveButton" type="button">Save Project</button>
+            <button class="action-button" id="openButton" type="button">Open Project</button>
+            <button class="action-button action-button--primary" id="exportButton" type="button">Export PNG</button>
+            <button class="action-button action-button--primary" id="gifButton" type="button">Export GIF</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="stage-panel">
+      <div class="stage-meta">
+        <div class="ink-readout">
+          <strong id="activeInkName">Metallic Gold</strong>
+          <span id="activeInkNote">Warm foil pigment with champagne glints and slick metallic streaks.</span>
+        </div>
+        <div class="stage-hint">Drag anywhere on the surface. Finished strokes keep shimmering until you clear them.</div>
+      </div>
+
+      <div class="canvas-shell" id="canvasShell">
+        <canvas id="paintCanvas" aria-hidden="true"></canvas>
+        <canvas id="fxCanvas" aria-label="Drawing surface"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <input id="projectInput" type="file" accept=".shimmerink,.json,application/json" hidden>
+
+  <script>
+    "use strict";
+
+    const TAU = Math.PI * 2;
+    const EXPORT_BACKGROUND = "#f6ecd8";
+
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+    const lerp = (start, end, amount) => start + (end - start) * amount;
+    const normalizeHue = (value) => ((value % 360) + 360) % 360;
+    const hsl = (h, s, l, a = 1) => `hsla(${normalizeHue(h)} ${s}% ${l}% / ${a})`;
+    const hash01 = (value) => {
+      const sine = Math.sin(value * 127.1 + value * value * 0.037) * 43758.5453123;
+      return sine - Math.floor(sine);
+    };
+
+    function addGradientStops(gradient, colors) {
+      const lastIndex = Math.max(colors.length - 1, 1);
+      colors.forEach((color, index) => {
+        gradient.addColorStop(index / lastIndex, color);
+      });
+    }
+
+    function createInkPreset(config) {
+      return {
+        ...config,
+        renderStamp(ctx, stamp, time) {
+          renderStampBase(ctx, stamp, this, time);
+        },
+        renderGlint(ctx, sparkleNode, time) {
+          renderGlintBase(ctx, sparkleNode, this, time);
+        }
+      };
+    }
+
+    function renderStampBase(ctx, stamp, preset) {
+      const palette = preset.palette ? preset.palette(stamp) : preset.baseColors;
+      const radius = stamp.radius;
+      const stretch = preset.stretch || 1.1;
+      const squeeze = preset.squeeze || 0.84;
+      const opacity = (preset.pigmentAlpha || 0.8) * (stamp.isSpray ? 0.72 : 0.98) * (0.55 + stamp.pressure * 0.55);
+      const shineColor = preset.shineColor ? preset.shineColor(stamp) : "rgba(255,255,255,0.9)";
+      const rimColor = preset.rimColor ? preset.rimColor(stamp) : "rgba(255,255,255,0.22)";
+      const shadowColor = preset.shadowColor ? preset.shadowColor(stamp) : "rgba(88,56,22,0.1)";
+
+      ctx.save();
+      ctx.translate(stamp.x, stamp.y);
+      ctx.rotate(stamp.angle + (preset.angleShift || 0));
+      ctx.scale(stretch, squeeze);
+      ctx.globalCompositeOperation = "source-over";
+
+      const baseGradient = ctx.createRadialGradient(-radius * 0.35, -radius * 0.42, radius * 0.14, 0, 0, radius * 1.18);
+      addGradientStops(baseGradient, palette);
+      ctx.globalAlpha = opacity;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, TAU);
+      ctx.fillStyle = baseGradient;
+      ctx.fill();
+
+      const sheen = ctx.createLinearGradient(-radius * 1.6, -radius * 0.75, radius * 1.6, radius * 0.75);
+      sheen.addColorStop(0, "rgba(255,255,255,0)");
+      sheen.addColorStop(0.26, "rgba(255,255,255,0)");
+      sheen.addColorStop(0.54, shineColor);
+      sheen.addColorStop(0.72, "rgba(255,255,255,0.04)");
+      sheen.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.globalAlpha = (preset.highlightAlpha || 0.32) * (stamp.isSpray ? 0.7 : 1);
+      ctx.fillStyle = sheen;
+      ctx.fill();
+
+      ctx.globalAlpha = preset.edgeAlpha || 0.16;
+      ctx.lineWidth = Math.max(0.8, radius * 0.12);
+      ctx.strokeStyle = rimColor;
+      ctx.stroke();
+
+      ctx.globalAlpha = preset.shadowAlpha || 0.09;
+      ctx.beginPath();
+      ctx.arc(radius * 0.12, radius * 0.14, radius * 0.76, 0, TAU);
+      ctx.fillStyle = shadowColor;
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function renderGlintBase(ctx, node, preset, time) {
+      const t = time * 0.001 * preset.sheenSpeed + node.phase;
+      const flicker = 0.5 + 0.5 * Math.sin(t * 1.7 + node.drift * 4.2);
+      const pulse = 0.55 + 0.45 * Math.cos(t * 0.9 + node.phase * 0.7);
+      const alpha = (0.12 + pulse * 0.58) * node.brightness;
+      const radius = node.size * (0.75 + pulse * 0.9);
+      const x = node.x + Math.cos(t + node.phase) * node.drift * 0.35;
+      const y = node.y + Math.sin(t * 1.12 + node.phase * 0.8) * node.drift * 0.35;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(node.phase * 0.35 + time * 0.00018 * preset.sheenSpeed);
+      ctx.globalCompositeOperation = preset.blendMode;
+
+      const color = preset.sparkleColor ? preset.sparkleColor(node, time, flicker) : preset.sparkleColors[Math.floor(hash01(node.hueOffset) * preset.sparkleColors.length) % preset.sparkleColors.length];
+      const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, radius * 1.85);
+      halo.addColorStop(0, color);
+      halo.addColorStop(0.48, color);
+      halo.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.globalAlpha = alpha * 0.35;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * 1.22, 0, TAU);
+      ctx.fillStyle = halo;
+      ctx.fill();
+
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineCap = "round";
+
+      switch (preset.glintStyle) {
+        case "dust":
+          drawDustGlint(ctx, radius, alpha, flicker);
+          break;
+        case "soft":
+          drawSoftGlint(ctx, radius, alpha, flicker);
+          break;
+        case "prism":
+          drawPrismGlint(ctx, radius, alpha, flicker);
+          break;
+        case "ember":
+          drawEmberGlint(ctx, radius, alpha, flicker);
+          break;
+        default:
+          drawStreakGlint(ctx, radius, alpha, flicker);
+          break;
+      }
+
+      ctx.restore();
+    }
+
+    function drawStreakGlint(ctx, radius, alpha, flicker) {
+      ctx.globalAlpha = alpha * (0.8 + flicker * 0.2);
+      ctx.lineWidth = Math.max(0.8, radius * 0.22);
+      ctx.beginPath();
+      ctx.moveTo(-radius * 2.5, 0);
+      ctx.lineTo(radius * 2.5, 0);
+      ctx.stroke();
+
+      ctx.globalAlpha = alpha * 0.5;
+      ctx.lineWidth = Math.max(0.7, radius * 0.12);
+      ctx.beginPath();
+      ctx.moveTo(0, -radius * 1.15);
+      ctx.lineTo(0, radius * 1.15);
+      ctx.stroke();
+
+      ctx.globalAlpha = alpha * 0.7;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * 0.42, 0, TAU);
+      ctx.fill();
+    }
+
+    function drawDustGlint(ctx, radius, alpha, flicker) {
+      ctx.globalAlpha = alpha * 0.8;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * (0.5 + flicker * 0.24), 0, TAU);
+      ctx.fill();
+
+      ctx.globalAlpha = alpha * 0.45;
+      ctx.lineWidth = Math.max(0.7, radius * 0.1);
+      ctx.beginPath();
+      ctx.moveTo(-radius * 1.2, 0);
+      ctx.lineTo(radius * 1.2, 0);
+      ctx.moveTo(0, -radius * 1.2);
+      ctx.lineTo(0, radius * 1.2);
+      ctx.stroke();
+    }
+
+    function drawSoftGlint(ctx, radius, alpha, flicker) {
+      const glow = ctx.createRadialGradient(0, 0, radius * 0.08, 0, 0, radius * 1.5);
+      glow.addColorStop(0, "rgba(255,255,255,0.95)");
+      glow.addColorStop(0.35, ctx.fillStyle);
+      glow.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.globalAlpha = alpha * 0.62;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * (0.7 + flicker * 0.25), 0, TAU);
+      ctx.fillStyle = glow;
+      ctx.fill();
+
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.globalAlpha = alpha * 0.42;
+      ctx.beginPath();
+      ctx.ellipse(radius * 0.35, -radius * 0.16, radius * 0.45, radius * 0.2, -0.4, 0, TAU);
+      ctx.fill();
+    }
+
+    function drawPrismGlint(ctx, radius, alpha, flicker) {
+      const spin = 0.25 + flicker * 0.35;
+      ctx.rotate(spin);
+      ctx.globalAlpha = alpha * 0.72;
+      ctx.beginPath();
+      ctx.moveTo(0, -radius * 1.5);
+      ctx.lineTo(radius * 1.22, 0);
+      ctx.lineTo(0, radius * 1.5);
+      ctx.lineTo(-radius * 1.22, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.globalAlpha = alpha * 0.46;
+      ctx.lineWidth = Math.max(0.8, radius * 0.12);
+      ctx.beginPath();
+      ctx.moveTo(-radius * 1.95, 0);
+      ctx.lineTo(radius * 1.95, 0);
+      ctx.moveTo(0, -radius * 1.95);
+      ctx.lineTo(0, radius * 1.95);
+      ctx.stroke();
+    }
+
+    function drawEmberGlint(ctx, radius, alpha, flicker) {
+      ctx.globalAlpha = alpha * 0.92;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius * 0.56, 0, TAU);
+      ctx.fill();
+
+      ctx.globalAlpha = alpha * 0.48;
+      ctx.lineWidth = Math.max(0.75, radius * 0.18);
+      ctx.beginPath();
+      ctx.moveTo(-radius * 1.7, 0);
+      ctx.lineTo(radius * 1.7, 0);
+      ctx.moveTo(0, -radius * 0.85);
+      ctx.lineTo(0, radius * 0.85);
+      ctx.stroke();
+
+      ctx.globalAlpha = alpha * 0.42;
+      ctx.beginPath();
+      ctx.arc(radius * 0.75, -radius * 0.62, radius * 0.28 * (0.85 + flicker * 0.4), 0, TAU);
+      ctx.arc(-radius * 0.65, radius * 0.55, radius * 0.18 * (0.8 + flicker * 0.35), 0, TAU);
+      ctx.fill();
+    }
+
+    const inkPresets = [
+      createInkPreset({
+        id: "gold",
+        label: "Metallic Gold",
+        note: "Warm foil pigment with champagne glints and slick metallic streaks.",
+        baseColors: ["#6e4310", "#d59a29", "#fff1b4"],
+        sparkleColors: ["rgba(255,248,223,0.96)", "rgba(250,219,142,0.95)"],
+        blendMode: "screen",
+        sheenSpeed: 0.85,
+        sparkleDensity: 0.055,
+        sparkleSizeRange: [1.5, 4.8],
+        sprayScatter: 18,
+        stretch: 1.2,
+        squeeze: 0.84,
+        pigmentAlpha: 0.84,
+        highlightAlpha: 0.38,
+        edgeAlpha: 0.2,
+        glintStyle: "streak",
+        shineColor: () => "rgba(255, 245, 216, 0.88)",
+        rimColor: () => "rgba(255, 241, 210, 0.28)",
+        shadowColor: () => "rgba(83, 47, 9, 0.16)"
+      }),
+      createInkPreset({
+        id: "silver",
+        label: "Metallic Silver",
+        note: "Cool steel pigment with icy highlights and sharper glints.",
+        baseColors: ["#4f5668", "#a8b2c3", "#f5f8ff"],
+        sparkleColors: ["rgba(255,255,255,0.96)", "rgba(204,228,255,0.94)"],
+        blendMode: "screen",
+        sheenSpeed: 1.05,
+        sparkleDensity: 0.058,
+        sparkleSizeRange: [1.4, 4.5],
+        sprayScatter: 16,
+        stretch: 1.18,
+        squeeze: 0.82,
+        pigmentAlpha: 0.82,
+        highlightAlpha: 0.42,
+        edgeAlpha: 0.24,
+        glintStyle: "streak",
+        shineColor: () => "rgba(241, 248, 255, 0.92)",
+        rimColor: () => "rgba(238, 244, 255, 0.32)",
+        shadowColor: () => "rgba(71, 78, 96, 0.15)"
+      }),
+      createInkPreset({
+        id: "chrome",
+        label: "Rainbow Chrome",
+        note: "A shifting chrome ribbon with prismatic sparkles and rotating color flips.",
+        baseColors: ["#5460d8", "#ff7d73", "#5fe6ad"],
+        sparkleColors: ["rgba(255,255,255,0.95)", "rgba(255,160,221,0.92)", "rgba(114,239,245,0.92)"],
+        blendMode: "lighter",
+        sheenSpeed: 1.3,
+        sparkleDensity: 0.07,
+        sparkleSizeRange: [1.8, 5.6],
+        sprayScatter: 22,
+        stretch: 1.24,
+        squeeze: 0.8,
+        pigmentAlpha: 0.82,
+        highlightAlpha: 0.32,
+        edgeAlpha: 0.05,
+        glintStyle: "prism",
+        palette: (stamp) => {
+          const hue = stamp.x * 0.18 + stamp.y * 0.08 + stamp.seed * 37;
+          return [
+            hsl(hue + 215, 74, 36, 0.92),
+            hsl(hue + 8, 94, 58, 0.9),
+            hsl(hue + 128, 82, 64, 0.84)
+          ];
+        },
+        shineColor: (stamp) => hsl(stamp.x * 0.1 + stamp.y * 0.04 + stamp.seed * 50 + 42, 100, 88, 0.72),
+        rimColor: (stamp) => hsl(stamp.x * 0.08 + stamp.y * 0.03 + stamp.seed * 40 + 180, 80, 80, 0.12),
+        shadowColor: (stamp) => hsl(stamp.x * 0.06 + stamp.y * 0.02 + stamp.seed * 32 + 228, 56, 24, 0.08),
+        sparkleColor: (node, time) => hsl(node.hueOffset + time * 0.05 + 200, 100, 74, 0.95)
+      }),
+      createInkPreset({
+        id: "pearl",
+        label: "Pearl Mist",
+        note: "Milky ink with soft pink-blue iridescence and calm satin sheen.",
+        baseColors: ["#d7d0d7", "#f1eef3", "#fffefd"],
+        sparkleColors: ["rgba(255,248,255,0.95)", "rgba(201,244,255,0.9)", "rgba(255,213,235,0.9)"],
+        blendMode: "screen",
+        sheenSpeed: 0.72,
+        sparkleDensity: 0.046,
+        sparkleSizeRange: [1.5, 4.6],
+        sprayScatter: 16,
+        stretch: 1.14,
+        squeeze: 0.9,
+        pigmentAlpha: 0.7,
+        highlightAlpha: 0.32,
+        edgeAlpha: 0.14,
+        glintStyle: "soft",
+        palette: (stamp) => {
+          const hue = 210 + Math.sin(stamp.progress * 1.2 + stamp.seed * 7) * 25;
+          return [
+            hsl(hue + 120, 12, 76, 0.6),
+            hsl(hue - 18, 26, 92, 0.78),
+            hsl(hue + 10, 24, 98, 0.88)
+          ];
+        },
+        shineColor: (stamp) => hsl(210 + stamp.progress * 12, 40, 97, 0.86),
+        rimColor: () => "rgba(255,255,255,0.24)",
+        shadowColor: () => "rgba(165, 150, 162, 0.08)",
+        sparkleColor: (node, time) => hsl(210 + node.hueOffset * 0.15 + Math.sin(time * 0.001 + node.phase) * 34, 82, 92, 0.92)
+      }),
+      createInkPreset({
+        id: "opal",
+        label: "Opal Veil",
+        note: "Pale aqua-lilac pigment with drifting opalescent flashes.",
+        baseColors: ["#89c5bd", "#d7d6f7", "#fefeff"],
+        sparkleColors: ["rgba(230,255,246,0.94)", "rgba(221,224,255,0.94)", "rgba(255,219,252,0.92)"],
+        blendMode: "screen",
+        sheenSpeed: 0.92,
+        sparkleDensity: 0.061,
+        sparkleSizeRange: [1.6, 5.2],
+        sprayScatter: 19,
+        stretch: 1.16,
+        squeeze: 0.86,
+        pigmentAlpha: 0.78,
+        highlightAlpha: 0.36,
+        edgeAlpha: 0.16,
+        glintStyle: "prism",
+        palette: (stamp) => {
+          const hue = 155 + Math.sin(stamp.progress * 1.25 + stamp.seed * 9) * 34;
+          return [
+            hsl(hue, 36, 58, 0.72),
+            hsl(hue + 96, 44, 86, 0.76),
+            hsl(hue + 162, 60, 96, 0.88)
+          ];
+        },
+        shineColor: (stamp) => hsl(172 + stamp.progress * 22, 84, 93, 0.9),
+        rimColor: (stamp) => hsl(290 + stamp.progress * 16, 70, 88, 0.28),
+        shadowColor: () => "rgba(105, 145, 150, 0.1)",
+        sparkleColor: (node, time) => hsl(node.hueOffset + time * 0.03 + 165, 88, 82, 0.94)
+      }),
+      createInkPreset({
+        id: "rose",
+        label: "Rose Foil",
+        note: "Blush foil with copper-pink flashes and polished ribbon highlights.",
+        baseColors: ["#8a3f50", "#d98c96", "#ffe1da"],
+        sparkleColors: ["rgba(255,227,225,0.95)", "rgba(255,183,190,0.92)", "rgba(255,235,194,0.9)"],
+        blendMode: "screen",
+        sheenSpeed: 1.08,
+        sparkleDensity: 0.058,
+        sparkleSizeRange: [1.5, 4.9],
+        sprayScatter: 18,
+        stretch: 1.22,
+        squeeze: 0.82,
+        pigmentAlpha: 0.84,
+        highlightAlpha: 0.4,
+        edgeAlpha: 0.18,
+        glintStyle: "streak",
+        shineColor: () => "rgba(255, 236, 228, 0.92)",
+        rimColor: () => "rgba(255, 231, 231, 0.3)",
+        shadowColor: () => "rgba(102, 43, 58, 0.14)"
+      }),
+      createInkPreset({
+        id: "galaxy",
+        label: "Galaxy Dust",
+        note: "Deep indigo pigment with dense star flecks and big slow twinkles.",
+        baseColors: ["#111830", "#2d3674", "#8795ff"],
+        sparkleColors: ["rgba(232,239,255,0.96)", "rgba(171,184,255,0.94)", "rgba(255,194,254,0.88)"],
+        blendMode: "lighter",
+        sheenSpeed: 1.22,
+        sparkleDensity: 0.085,
+        sparkleSizeRange: [1.2, 5.8],
+        sprayScatter: 24,
+        stretch: 1.12,
+        squeeze: 0.88,
+        pigmentAlpha: 0.78,
+        highlightAlpha: 0.28,
+        edgeAlpha: 0.18,
+        glintStyle: "dust",
+        shineColor: () => "rgba(180, 194, 255, 0.72)",
+        rimColor: () => "rgba(199, 210, 255, 0.24)",
+        shadowColor: () => "rgba(12, 18, 43, 0.18)",
+        sparkleColor: (node, time) => hsl(228 + node.hueOffset * 0.22 + Math.sin(time * 0.0012 + node.phase) * 34, 100, 84, 0.94)
+      }),
+      createInkPreset({
+        id: "ember",
+        label: "Ember Glitter",
+        note: "Hot red-orange pigment with gold sparks and a faster firefly flicker.",
+        baseColors: ["#7a1c12", "#e65a1b", "#ffcc67"],
+        sparkleColors: ["rgba(255,244,193,0.96)", "rgba(255,188,84,0.95)", "rgba(255,123,62,0.92)"],
+        blendMode: "lighter",
+        sheenSpeed: 1.42,
+        sparkleDensity: 0.072,
+        sparkleSizeRange: [1.4, 5.1],
+        sprayScatter: 22,
+        stretch: 1.18,
+        squeeze: 0.82,
+        pigmentAlpha: 0.86,
+        highlightAlpha: 0.36,
+        edgeAlpha: 0.16,
+        glintStyle: "ember",
+        shineColor: () => "rgba(255, 229, 159, 0.88)",
+        rimColor: () => "rgba(255, 222, 170, 0.24)",
+        shadowColor: () => "rgba(104, 24, 9, 0.16)"
+      })
+    ];
+
+    const inkById = new Map(inkPresets.map((preset) => [preset.id, preset]));
+
+    const state = {
+      activeInkId: inkPresets[0].id,
+      brushSize: 20,
+      mode: "brush",
+      strokes: [],
+      activeStroke: null,
+      isDrawing: false,
+      pointerId: null,
+      sceneWidth: 0,
+      sceneHeight: 0
+    };
+
+    const inkPicker = document.getElementById("inkPicker");
+    const brushSizeInput = document.getElementById("brushSize");
+    const brushValue = document.getElementById("brushValue");
+    const modeButtons = Array.from(document.querySelectorAll("[data-mode]"));
+    const undoButton = document.getElementById("undoButton");
+    const clearButton = document.getElementById("clearButton");
+    const saveButton = document.getElementById("saveButton");
+    const openButton = document.getElementById("openButton");
+    const exportButton = document.getElementById("exportButton");
+    const gifButton = document.getElementById("gifButton");
+    const projectInput = document.getElementById("projectInput");
+    const activeInkName = document.getElementById("activeInkName");
+    const activeInkNote = document.getElementById("activeInkNote");
+    const canvasShell = document.getElementById("canvasShell");
+    const paintCanvas = document.getElementById("paintCanvas");
+    const fxCanvas = document.getElementById("fxCanvas");
+    const paintCtx = paintCanvas.getContext("2d");
+    const fxCtx = fxCanvas.getContext("2d");
+
+    function buildInkPicker() {
+      const fragment = document.createDocumentFragment();
+
+      inkPresets.forEach((preset) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "ink-chip";
+        button.setAttribute("role", "listitem");
+        button.dataset.inkId = preset.id;
+        button.setAttribute("aria-label", preset.label);
+        button.style.setProperty("--swatch-1", preset.baseColors[0]);
+        button.style.setProperty("--swatch-2", preset.baseColors[1]);
+        button.style.setProperty("--swatch-3", preset.baseColors[2] || preset.baseColors[1]);
+        button.innerHTML = `<span class="ink-chip__label">${preset.label}</span>`;
+        button.addEventListener("click", () => selectInk(preset.id));
+        fragment.appendChild(button);
+      });
+
+      inkPicker.appendChild(fragment);
+      updateInkButtons();
+      updateInkReadout();
+    }
+
+    function selectInk(inkId) {
+      if (!inkById.has(inkId)) {
+        return;
+      }
+
+      state.activeInkId = inkId;
+      updateInkButtons();
+      updateInkReadout();
+    }
+
+    function updateInkButtons() {
+      inkPicker.querySelectorAll(".ink-chip").forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.inkId === state.activeInkId);
+      });
+    }
+
+    function updateInkReadout() {
+      const preset = inkById.get(state.activeInkId);
+      activeInkName.textContent = preset.label;
+      activeInkNote.textContent = preset.note;
+    }
+
+    function updateModeButtons() {
+      modeButtons.forEach((button) => {
+        const isActive = button.dataset.mode === state.mode;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+      });
+    }
+
+    function updateActionButtons() {
+      const hasCommittedStrokes = state.strokes.length > 0;
+      const hasAnything = hasCommittedStrokes || Boolean(state.activeStroke);
+      undoButton.disabled = !hasCommittedStrokes;
+      clearButton.disabled = !hasAnything;
+      exportButton.disabled = !hasAnything;
+      gifButton.disabled = !hasAnything;
+    }
+
+    function setBrushSize(nextSize) {
+      state.brushSize = nextSize;
+      brushSizeInput.value = String(nextSize);
+      brushValue.textContent = `${nextSize} px`;
+    }
+
+    function configureCanvas(canvas, ctx, width, height) {
+      const dpr = Math.max(window.devicePixelRatio || 1, 1);
+      canvas.width = Math.max(1, Math.round(width * dpr));
+      canvas.height = Math.max(1, Math.round(height * dpr));
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.imageSmoothingEnabled = true;
+    }
+
+    function scaleStroke(stroke, scaleX, scaleY) {
+      const brushScale = Math.sqrt(scaleX * scaleY);
+      stroke.brushSize *= brushScale;
+      stroke.pathLength *= brushScale;
+
+      stroke.points.forEach((point) => {
+        point.x *= scaleX;
+        point.y *= scaleY;
+      });
+
+      stroke.sparkleNodes.forEach((node) => {
+        node.x *= scaleX;
+        node.y *= scaleY;
+        node.size *= brushScale;
+        node.drift *= brushScale;
+      });
+    }
+
+    function measurePathLength(points) {
+      let total = 0;
+      for (let index = 1; index < points.length; index += 1) {
+        total += Math.hypot(points[index].x - points[index - 1].x, points[index].y - points[index - 1].y);
+      }
+      return total;
+    }
+
+    function sanitizePoint(rawPoint) {
+      if (!rawPoint || !Number.isFinite(rawPoint.x) || !Number.isFinite(rawPoint.y)) {
+        return null;
+      }
+
+      return {
+        x: rawPoint.x,
+        y: rawPoint.y,
+        t: Number.isFinite(rawPoint.t) ? rawPoint.t : performance.now(),
+        pressure: clamp(Number.isFinite(rawPoint.pressure) ? rawPoint.pressure : 0.58, 0.2, 1)
+      };
+    }
+
+    function sanitizeSparkleNode(rawNode) {
+      if (!rawNode || !Number.isFinite(rawNode.x) || !Number.isFinite(rawNode.y)) {
+        return null;
+      }
+
+      return {
+        x: rawNode.x,
+        y: rawNode.y,
+        size: clamp(Number.isFinite(rawNode.size) ? rawNode.size : 2, 0.4, 40),
+        phase: Number.isFinite(rawNode.phase) ? rawNode.phase : 0,
+        hueOffset: Number.isFinite(rawNode.hueOffset) ? rawNode.hueOffset : 0,
+        drift: clamp(Number.isFinite(rawNode.drift) ? rawNode.drift : 0.4, 0, 4),
+        brightness: clamp(Number.isFinite(rawNode.brightness) ? rawNode.brightness : 0.8, 0.1, 2)
+      };
+    }
+
+    function sanitizeStroke(rawStroke) {
+      if (!rawStroke || typeof rawStroke !== "object") {
+        return null;
+      }
+
+      const points = Array.isArray(rawStroke.points)
+        ? rawStroke.points.map(sanitizePoint).filter(Boolean)
+        : [];
+
+      if (!points.length) {
+        return null;
+      }
+
+      const sparkleNodes = Array.isArray(rawStroke.sparkleNodes)
+        ? rawStroke.sparkleNodes.map(sanitizeSparkleNode).filter(Boolean)
+        : [];
+
+      return {
+        inkId: inkById.has(rawStroke.inkId) ? rawStroke.inkId : inkPresets[0].id,
+        mode: rawStroke.mode === "spray" ? "spray" : "brush",
+        brushSize: clamp(Number.isFinite(rawStroke.brushSize) ? rawStroke.brushSize : state.brushSize, 6, 96),
+        points,
+        sparkleNodes,
+        pathLength: Number.isFinite(rawStroke.pathLength) ? rawStroke.pathLength : measurePathLength(points),
+        seed: Number.isFinite(rawStroke.seed) ? rawStroke.seed : Math.random() * 1000
+      };
+    }
+
+    function resizeStage() {
+      const rect = canvasShell.getBoundingClientRect();
+      const width = Math.max(320, Math.round(rect.width));
+      const height = Math.max(320, Math.round(rect.height));
+
+      if (width === state.sceneWidth && height === state.sceneHeight) {
+        return;
+      }
+
+      const oldWidth = state.sceneWidth;
+      const oldHeight = state.sceneHeight;
+      let snapshot = null;
+
+      if (oldWidth > 0 && oldHeight > 0) {
+        snapshot = document.createElement("canvas");
+        snapshot.width = paintCanvas.width;
+        snapshot.height = paintCanvas.height;
+        snapshot.getContext("2d").drawImage(paintCanvas, 0, 0);
+      }
+
+      state.sceneWidth = width;
+      state.sceneHeight = height;
+
+      configureCanvas(paintCanvas, paintCtx, width, height);
+      configureCanvas(fxCanvas, fxCtx, width, height);
+
+      if (snapshot) {
+        paintCtx.save();
+        paintCtx.setTransform(1, 0, 0, 1, 0, 0);
+        paintCtx.drawImage(snapshot, 0, 0, snapshot.width, snapshot.height, 0, 0, paintCanvas.width, paintCanvas.height);
+        paintCtx.restore();
+      }
+
+      if (oldWidth > 0 && oldHeight > 0) {
+        const scaleX = width / oldWidth;
+        const scaleY = height / oldHeight;
+        state.strokes.forEach((stroke) => scaleStroke(stroke, scaleX, scaleY));
+        if (state.activeStroke) {
+          scaleStroke(state.activeStroke, scaleX, scaleY);
+        }
+      }
+
+      redrawPaint();
+    }
+
+    function getCanvasPoint(event) {
+      const rect = fxCanvas.getBoundingClientRect();
+      return {
+        x: clamp(event.clientX - rect.left, 0, rect.width),
+        y: clamp(event.clientY - rect.top, 0, rect.height),
+        t: performance.now(),
+        pressure: event.pressure && event.pressure > 0 ? clamp(event.pressure, 0.2, 1) : 0.58
+      };
+    }
+
+    function createStroke(point) {
+      return {
+        inkId: state.activeInkId,
+        mode: state.mode,
+        brushSize: state.brushSize,
+        points: [point],
+        sparkleNodes: [],
+        pathLength: 0,
+        seed: Math.random() * 1000 + performance.now() * 0.01
+      };
+    }
+
+    function getPreset(stroke) {
+      return inkById.get(stroke.inkId);
+    }
+
+    function getMaxSparkles(stroke) {
+      return stroke.mode === "spray" ? 220 : 140;
+    }
+
+    function maybeAddSparkleNode(stroke, preset, stamp, randomKey) {
+      if (stroke.sparkleNodes.length >= getMaxSparkles(stroke)) {
+        return;
+      }
+
+      const chanceBase = preset.sparkleDensity * (stroke.mode === "spray" ? 1.25 : 0.8);
+      if (hash01(randomKey) > chanceBase) {
+        return;
+      }
+
+      const minSize = preset.sparkleSizeRange[0];
+      const maxSize = preset.sparkleSizeRange[1];
+      const spread = stamp.radius * (stamp.isSpray ? 1.6 : 0.72);
+      stroke.sparkleNodes.push({
+        x: stamp.x + (hash01(randomKey + 1.17) - 0.5) * spread,
+        y: stamp.y + (hash01(randomKey + 2.11) - 0.5) * spread,
+        size: lerp(minSize, maxSize, hash01(randomKey + 3.09)) * (0.7 + stamp.pressure * 0.45),
+        phase: hash01(randomKey + 4.3) * TAU,
+        hueOffset: (hash01(randomKey + 5.9) - 0.5) * 320,
+        drift: lerp(0.18, 1.12, hash01(randomKey + 7.7)),
+        brightness: lerp(0.55, 1.25, hash01(randomKey + 9.2))
+      });
+    }
+
+    function drawBrushStamp(ctx, stroke, preset, point, angle, travel, emitSparkles, stampIndex) {
+      const radius = stroke.brushSize * 0.52 * (0.5 + point.pressure * 0.54);
+      const stamp = {
+        x: point.x,
+        y: point.y,
+        radius,
+        angle,
+        pressure: point.pressure,
+        progress: travel / Math.max(stroke.brushSize * 1.2, 1),
+        seed: stroke.seed,
+        isSpray: false
+      };
+
+      preset.renderStamp(ctx, stamp, 0);
+
+      if (emitSparkles) {
+        maybeAddSparkleNode(stroke, preset, stamp, stroke.seed + travel * 0.13 + stampIndex * 0.93);
+      }
+    }
+
+    function drawSprayBurst(ctx, stroke, preset, point, angle, travel, emitSparkles, stampIndex) {
+      const dotCount = clamp(Math.round(stroke.brushSize * 0.72), 6, 24);
+      const scatter = preset.sprayScatter * (0.45 + stroke.brushSize * 0.03);
+      for (let index = 0; index < dotCount; index += 1) {
+        const key = stroke.seed + stampIndex * 19.7 + index * 13.3 + travel * 0.031;
+        const theta = hash01(key) * TAU;
+        const distance = Math.sqrt(hash01(key + 1.7)) * scatter;
+        const x = point.x + Math.cos(theta) * distance;
+        const y = point.y + Math.sin(theta) * distance;
+        const radius = stroke.brushSize * lerp(0.12, 0.26, hash01(key + 2.4)) * (0.7 + point.pressure * 0.4);
+        const stamp = {
+          x,
+          y,
+          radius,
+          angle: angle + (hash01(key + 3.9) - 0.5) * 1.6,
+          pressure: point.pressure,
+          progress: travel / Math.max(stroke.brushSize, 1) + index * 0.08,
+          seed: stroke.seed + index * 0.01,
+          isSpray: true
+        };
+
+        preset.renderStamp(ctx, stamp, 0);
+
+        if (emitSparkles) {
+          maybeAddSparkleNode(stroke, preset, stamp, key + 4.8);
+        }
+      }
+    }
+
+    function renderStrokeStart(ctx, stroke, emitSparkles) {
+      const preset = getPreset(stroke);
+      const point = stroke.points[0];
+      const angle = Math.PI / 6;
+
+      if (stroke.mode === "spray") {
+        drawSprayBurst(ctx, stroke, preset, point, angle, 0, emitSparkles, 0);
+      } else {
+        drawBrushStamp(ctx, stroke, preset, point, angle, 0, emitSparkles, 0);
+      }
+    }
+
+    function drawStrokeSegment(ctx, stroke, fromPoint, toPoint, startTravel, emitSparkles, segmentIndex) {
+      const preset = getPreset(stroke);
+      const dx = toPoint.x - fromPoint.x;
+      const dy = toPoint.y - fromPoint.y;
+      const distance = Math.hypot(dx, dy);
+      const angle = distance > 0.001 ? Math.atan2(dy, dx) : 0;
+      const spacing = stroke.mode === "spray"
+        ? Math.max(4, stroke.brushSize * 0.38)
+        : Math.max(1.6, stroke.brushSize * 0.18);
+      const steps = Math.max(1, Math.ceil(distance / spacing));
+      let travel = startTravel;
+
+      for (let step = 1; step <= steps; step += 1) {
+        const ratio = step / steps;
+        const point = {
+          x: lerp(fromPoint.x, toPoint.x, ratio),
+          y: lerp(fromPoint.y, toPoint.y, ratio),
+          t: lerp(fromPoint.t, toPoint.t, ratio),
+          pressure: lerp(fromPoint.pressure, toPoint.pressure, ratio)
+        };
+        travel = startTravel + distance * ratio;
+
+        if (stroke.mode === "spray") {
+          drawSprayBurst(ctx, stroke, preset, point, angle, travel, emitSparkles, segmentIndex * 100 + step);
+        } else {
+          drawBrushStamp(ctx, stroke, preset, point, angle, travel, emitSparkles, segmentIndex * 100 + step);
+        }
+      }
+
+      return travel;
+    }
+
+    function replayStroke(ctx, stroke) {
+      if (!stroke.points.length) {
+        return;
+      }
+
+      renderStrokeStart(ctx, stroke, false);
+      let travel = 0;
+
+      for (let index = 1; index < stroke.points.length; index += 1) {
+        travel = drawStrokeSegment(ctx, stroke, stroke.points[index - 1], stroke.points[index], travel, false, index);
+      }
+    }
+
+    function redrawPaint() {
+      paintCtx.clearRect(0, 0, state.sceneWidth, state.sceneHeight);
+      state.strokes.forEach((stroke) => replayStroke(paintCtx, stroke));
+      if (state.activeStroke) {
+        replayStroke(paintCtx, state.activeStroke);
+      }
+    }
+
+    function getRenderableStrokes() {
+      return state.activeStroke ? [...state.strokes, state.activeStroke] : state.strokes;
+    }
+
+    function drawSparklesToContext(ctx, time, scaleX = 1, scaleY = 1) {
+      ctx.save();
+      ctx.scale(scaleX, scaleY);
+      getRenderableStrokes().forEach((stroke) => {
+        const preset = getPreset(stroke);
+        stroke.sparkleNodes.forEach((node) => {
+          preset.renderGlint(ctx, node, time);
+        });
+      });
+      ctx.restore();
+    }
+
+    function renderCombinedFrame(ctx, time, width, height) {
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = EXPORT_BACKGROUND;
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(paintCanvas, 0, 0, width, height);
+      drawSparklesToContext(ctx, time, width / state.sceneWidth, height / state.sceneHeight);
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = filename;
+      link.href = url;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function serializeProject() {
+      return JSON.stringify({
+        app: "shimmer-ink-studio",
+        version: 1,
+        sceneWidth: state.sceneWidth,
+        sceneHeight: state.sceneHeight,
+        activeInkId: state.activeInkId,
+        brushSize: state.brushSize,
+        mode: state.mode,
+        strokes: getRenderableStrokes()
+      }, null, 2);
+    }
+
+    function saveProject() {
+      downloadBlob(
+        new Blob([serializeProject()], { type: "application/json" }),
+        `shimmer-ink-${Date.now()}.shimmerink`
+      );
+    }
+
+    async function openProjectFile(event) {
+      const [file] = event.target.files || [];
+      if (!file) {
+        return;
+      }
+
+      try {
+        const raw = JSON.parse(await file.text());
+        if (!raw || raw.version !== 1 || !Array.isArray(raw.strokes)) {
+          throw new Error("Unsupported project format");
+        }
+
+        const importedStrokes = raw.strokes.map(sanitizeStroke).filter(Boolean);
+        state.strokes = importedStrokes;
+        state.activeStroke = null;
+        state.isDrawing = false;
+        state.pointerId = null;
+
+        if (inkById.has(raw.activeInkId)) {
+          state.activeInkId = raw.activeInkId;
+        }
+        if (Number.isFinite(raw.brushSize)) {
+          setBrushSize(clamp(Math.round(raw.brushSize), 6, 48));
+        }
+        if (raw.mode === "spray" || raw.mode === "brush") {
+          state.mode = raw.mode;
+        }
+
+        if (Number.isFinite(raw.sceneWidth) && Number.isFinite(raw.sceneHeight) && raw.sceneWidth > 0 && raw.sceneHeight > 0) {
+          const scaleX = state.sceneWidth / raw.sceneWidth;
+          const scaleY = state.sceneHeight / raw.sceneHeight;
+          state.strokes.forEach((stroke) => scaleStroke(stroke, scaleX, scaleY));
+        }
+
+        updateInkButtons();
+        updateInkReadout();
+        updateModeButtons();
+        redrawPaint();
+        updateActionButtons();
+      } catch (error) {
+        alert("That project file could not be opened.");
+      } finally {
+        event.target.value = "";
+      }
+    }
+
+    class ByteWriter {
+      constructor() {
+        this.bytes = [];
+      }
+
+      writeByte(value) {
+        this.bytes.push(value & 255);
+      }
+
+      writeBytes(values) {
+        values.forEach((value) => this.writeByte(value));
+      }
+
+      writeShort(value) {
+        this.writeByte(value & 255);
+        this.writeByte((value >> 8) & 255);
+      }
+
+      writeText(text) {
+        for (let index = 0; index < text.length; index += 1) {
+          this.writeByte(text.charCodeAt(index));
+        }
+      }
+
+      toUint8Array() {
+        return new Uint8Array(this.bytes);
+      }
+    }
+
+    function nextPowerOfTwo(value) {
+      let size = 2;
+      while (size < value && size < 256) {
+        size <<= 1;
+      }
+      return size;
+    }
+
+    function quantizeColor(red, green, blue) {
+      return ((red >> 3) << 10) | ((green >> 3) << 5) | (blue >> 3);
+    }
+
+    function expandColorKey(key) {
+      return [
+        (((key >> 10) & 31) << 3) | 4,
+        (((key >> 5) & 31) << 3) | 4,
+        ((key & 31) << 3) | 4
+      ];
+    }
+
+    function buildGifPalette(frames) {
+      const counts = new Map();
+      counts.set(quantizeColor(246, 236, 216), 1);
+
+      frames.forEach((frame) => {
+        for (let index = 0; index < frame.data.length; index += 8) {
+          if (frame.data[index + 3] < 12) {
+            continue;
+          }
+
+          const key = quantizeColor(frame.data[index], frame.data[index + 1], frame.data[index + 2]);
+          counts.set(key, (counts.get(key) || 0) + 1);
+        }
+      });
+
+      const palette = Array.from(counts.entries())
+        .sort((left, right) => right[1] - left[1])
+        .slice(0, 256)
+        .map(([key]) => expandColorKey(key));
+
+      const tableSize = nextPowerOfTwo(Math.max(2, palette.length));
+      while (palette.length < tableSize) {
+        palette.push(palette[palette.length - 1] || [246, 236, 216]);
+      }
+
+      return palette;
+    }
+
+    function mapFrameToPalette(frame, palette) {
+      const indexed = new Uint8Array(frame.data.length / 4);
+      const cache = new Map();
+
+      for (let pixel = 0, index = 0; index < frame.data.length; index += 4, pixel += 1) {
+        const key = quantizeColor(frame.data[index], frame.data[index + 1], frame.data[index + 2]);
+        if (!cache.has(key)) {
+          const [red, green, blue] = expandColorKey(key);
+          let bestIndex = 0;
+          let bestDistance = Infinity;
+
+          for (let paletteIndex = 0; paletteIndex < palette.length; paletteIndex += 1) {
+            const color = palette[paletteIndex];
+            const distance =
+              (red - color[0]) * (red - color[0]) +
+              (green - color[1]) * (green - color[1]) +
+              (blue - color[2]) * (blue - color[2]);
+
+            if (distance < bestDistance) {
+              bestDistance = distance;
+              bestIndex = paletteIndex;
+              if (distance === 0) {
+                break;
+              }
+            }
+          }
+
+          cache.set(key, bestIndex);
+        }
+
+        indexed[pixel] = cache.get(key);
+      }
+
+      return indexed;
+    }
+
+    function lzwEncode(indices, minCodeSize) {
+      const clearCode = 1 << minCodeSize;
+      const endCode = clearCode + 1;
+      const output = [];
+      let codeSize = minCodeSize + 1;
+      let nextCode = endCode + 1;
+      let bitBuffer = 0;
+      let bitCount = 0;
+      let dictionary = new Map();
+
+      function writeCode(code) {
+        bitBuffer |= code << bitCount;
+        bitCount += codeSize;
+
+        while (bitCount >= 8) {
+          output.push(bitBuffer & 255);
+          bitBuffer >>= 8;
+          bitCount -= 8;
+        }
+      }
+
+      function resetDictionary() {
+        dictionary = new Map();
+        codeSize = minCodeSize + 1;
+        nextCode = endCode + 1;
+      }
+
+      resetDictionary();
+      writeCode(clearCode);
+
+      let phrase = String(indices[0]);
+      for (let index = 1; index < indices.length; index += 1) {
+        const symbol = indices[index];
+        const joined = `${phrase},${symbol}`;
+
+        if (dictionary.has(joined)) {
+          phrase = joined;
+          continue;
+        }
+
+        writeCode(phrase.includes(",") ? dictionary.get(phrase) : Number(phrase));
+
+        if (nextCode < 4096) {
+          dictionary.set(joined, nextCode);
+          nextCode += 1;
+          if (nextCode === (1 << codeSize) && codeSize < 12) {
+            codeSize += 1;
+          }
+        } else {
+          writeCode(clearCode);
+          resetDictionary();
+        }
+
+        phrase = String(symbol);
+      }
+
+      writeCode(phrase.includes(",") ? dictionary.get(phrase) : Number(phrase));
+      writeCode(endCode);
+
+      if (bitCount > 0) {
+        output.push(bitBuffer & 255);
+      }
+
+      return output;
+    }
+
+    function writeSubBlocks(writer, bytes) {
+      for (let offset = 0; offset < bytes.length; offset += 255) {
+        const chunk = bytes.slice(offset, offset + 255);
+        writer.writeByte(chunk.length);
+        writer.writeBytes(chunk);
+      }
+      writer.writeByte(0);
+    }
+
+    function encodeGif(frames, width, height, delayCentiseconds) {
+      const palette = buildGifPalette(frames);
+      const minCodeSize = Math.max(2, Math.ceil(Math.log2(palette.length)));
+      const writer = new ByteWriter();
+
+      writer.writeText("GIF89a");
+      writer.writeShort(width);
+      writer.writeShort(height);
+      writer.writeByte(0x80 | 0x70 | (Math.round(Math.log2(palette.length)) - 1));
+      writer.writeByte(0);
+      writer.writeByte(0);
+      palette.forEach((color) => writer.writeBytes(color));
+
+      writer.writeBytes([0x21, 0xFF, 0x0B]);
+      writer.writeText("NETSCAPE2.0");
+      writer.writeBytes([0x03, 0x01, 0x00, 0x00, 0x00]);
+
+      frames.forEach((frame) => {
+        const indexed = mapFrameToPalette(frame, palette);
+        writer.writeBytes([0x21, 0xF9, 0x04, 0x04]);
+        writer.writeShort(delayCentiseconds);
+        writer.writeByte(0);
+        writer.writeByte(0);
+
+        writer.writeByte(0x2C);
+        writer.writeShort(0);
+        writer.writeShort(0);
+        writer.writeShort(width);
+        writer.writeShort(height);
+        writer.writeByte(0);
+        writer.writeByte(minCodeSize);
+        writeSubBlocks(writer, lzwEncode(indexed, minCodeSize));
+      });
+
+      writer.writeByte(0x3B);
+      return writer.toUint8Array();
+    }
+
+    async function exportGif() {
+      const frameScale = Math.min(1, 720 / Math.max(state.sceneWidth, state.sceneHeight));
+      const width = Math.max(1, Math.round(state.sceneWidth * frameScale));
+      const height = Math.max(1, Math.round(state.sceneHeight * frameScale));
+      const captureCanvas = document.createElement("canvas");
+      const captureCtx = captureCanvas.getContext("2d");
+      const frameCount = 18;
+      const loopDuration = 1800;
+      const delayCentiseconds = Math.max(2, Math.round(loopDuration / frameCount / 10));
+      const startTime = performance.now();
+      const frames = [];
+      const originalLabel = gifButton.textContent;
+
+      captureCanvas.width = width;
+      captureCanvas.height = height;
+      gifButton.disabled = true;
+      gifButton.textContent = "Encoding...";
+
+      try {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        for (let index = 0; index < frameCount; index += 1) {
+          const time = startTime + (loopDuration / frameCount) * index;
+          renderCombinedFrame(captureCtx, time, width, height);
+          frames.push(captureCtx.getImageData(0, 0, width, height));
+        }
+
+        downloadBlob(
+          new Blob([encodeGif(frames, width, height, delayCentiseconds)], { type: "image/gif" }),
+          `shimmer-ink-${Date.now()}.gif`
+        );
+      } catch (error) {
+        alert("GIF export failed.");
+      } finally {
+        gifButton.textContent = originalLabel;
+        updateActionButtons();
+      }
+    }
+
+    function beginStroke(event) {
+      if (state.isDrawing) {
+        return;
+      }
+
+      if (event.pointerType === "mouse" && event.button !== 0) {
+        return;
+      }
+
+      event.preventDefault();
+      state.pointerId = event.pointerId;
+      state.isDrawing = true;
+      fxCanvas.setPointerCapture(event.pointerId);
+      const point = getCanvasPoint(event);
+      state.activeStroke = createStroke(point);
+      renderStrokeStart(paintCtx, state.activeStroke, true);
+      updateActionButtons();
+    }
+
+    function extendStroke(event) {
+      if (!state.isDrawing || event.pointerId !== state.pointerId || !state.activeStroke) {
+        return;
+      }
+
+      event.preventDefault();
+      const stroke = state.activeStroke;
+      const point = getCanvasPoint(event);
+      const lastPoint = stroke.points[stroke.points.length - 1];
+      stroke.points.push(point);
+      stroke.pathLength = drawStrokeSegment(
+        paintCtx,
+        stroke,
+        lastPoint,
+        point,
+        stroke.pathLength,
+        true,
+        stroke.points.length - 1
+      );
+      updateActionButtons();
+    }
+
+    function finishStroke(event) {
+      if (!state.isDrawing || event.pointerId !== state.pointerId) {
+        return;
+      }
+
+      event.preventDefault();
+      if (state.activeStroke) {
+        state.strokes.push(state.activeStroke);
+      }
+
+      state.activeStroke = null;
+      state.isDrawing = false;
+      state.pointerId = null;
+      if (fxCanvas.hasPointerCapture(event.pointerId)) {
+        fxCanvas.releasePointerCapture(event.pointerId);
+      }
+      updateActionButtons();
+    }
+
+    function cancelStroke(event) {
+      if (!state.isDrawing || event.pointerId !== state.pointerId) {
+        return;
+      }
+
+      finishStroke(event);
+    }
+
+    function undoLastStroke() {
+      if (!state.strokes.length) {
+        return;
+      }
+
+      state.strokes.pop();
+      redrawPaint();
+      updateActionButtons();
+    }
+
+    function clearAllStrokes() {
+      state.strokes = [];
+      state.activeStroke = null;
+      state.isDrawing = false;
+      state.pointerId = null;
+      paintCtx.clearRect(0, 0, state.sceneWidth, state.sceneHeight);
+      fxCtx.clearRect(0, 0, state.sceneWidth, state.sceneHeight);
+      updateActionButtons();
+    }
+
+    function exportPng() {
+      const exportCanvas = document.createElement("canvas");
+      exportCanvas.width = paintCanvas.width;
+      exportCanvas.height = paintCanvas.height;
+      const exportCtx = exportCanvas.getContext("2d");
+      renderCombinedFrame(exportCtx, performance.now(), exportCanvas.width, exportCanvas.height);
+
+      const link = document.createElement("a");
+      link.download = `shimmer-ink-${Date.now()}.png`;
+      link.href = exportCanvas.toDataURL("image/png");
+      link.click();
+    }
+
+    function animate(time) {
+      fxCtx.globalCompositeOperation = "source-over";
+      fxCtx.clearRect(0, 0, state.sceneWidth, state.sceneHeight);
+      drawSparklesToContext(fxCtx, time, 1, 1);
+
+      requestAnimationFrame(animate);
+    }
+
+    brushSizeInput.addEventListener("input", (event) => {
+      setBrushSize(Number(event.target.value));
+    });
+
+    modeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.mode = button.dataset.mode;
+        updateModeButtons();
+      });
+    });
+
+    undoButton.addEventListener("click", undoLastStroke);
+    clearButton.addEventListener("click", clearAllStrokes);
+    saveButton.addEventListener("click", saveProject);
+    openButton.addEventListener("click", () => projectInput.click());
+    exportButton.addEventListener("click", exportPng);
+    gifButton.addEventListener("click", exportGif);
+    projectInput.addEventListener("change", openProjectFile);
+    fxCanvas.addEventListener("pointerdown", beginStroke);
+    fxCanvas.addEventListener("pointermove", extendStroke);
+    fxCanvas.addEventListener("pointerup", finishStroke);
+    fxCanvas.addEventListener("pointercancel", cancelStroke);
+    fxCanvas.addEventListener("lostpointercapture", cancelStroke);
+    fxCanvas.addEventListener("contextmenu", (event) => event.preventDefault());
+
+    let resizeFrame = 0;
+    window.addEventListener("resize", () => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(resizeStage);
+    });
+
+    buildInkPicker();
+    setBrushSize(state.brushSize);
+    updateModeButtons();
+    updateActionButtons();
+    resizeStage();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
