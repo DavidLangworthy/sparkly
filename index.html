@@ -705,6 +705,25 @@
     const lerp = (start, end, amount) => start + (end - start) * amount;
     const normalizeHue = (value) => ((value % 360) + 360) % 360;
     const hsl = (h, s, l, a = 1) => `hsla(${normalizeHue(h)} ${s}% ${l}% / ${a})`;
+    const parseHexColor = (value) => {
+      if (typeof value !== "string") {
+        return null;
+      }
+
+      const compact = value.trim().replace(/^#/, "");
+      const hex = compact.length === 3
+        ? compact.split("").map((character) => character + character).join("")
+        : compact;
+      if (!/^[0-9a-f]{6}$/i.test(hex)) {
+        return null;
+      }
+
+      return [
+        Number.parseInt(hex.slice(0, 2), 16),
+        Number.parseInt(hex.slice(2, 4), 16),
+        Number.parseInt(hex.slice(4, 6), 16)
+      ];
+    };
     const hash01 = (value) => {
       const sine = Math.sin(value * 127.1 + value * value * 0.037) * 43758.5453123;
       return sine - Math.floor(sine);
@@ -1991,6 +2010,14 @@
       ];
     }
 
+    function colorDistanceSquared(left, right) {
+      return (
+        (left[0] - right[0]) * (left[0] - right[0]) +
+        (left[1] - right[1]) * (left[1] - right[1]) +
+        (left[2] - right[2]) * (left[2] - right[2])
+      );
+    }
+
     function isTransparentGifPixel(frame, pixelIndex, alpha) {
       if (alpha <= 0) {
         return true;
@@ -2017,12 +2044,47 @@
       }
     }
 
-    function buildGifPaletteFromCounts(counts, transparentBackground) {
+    function buildGifPaletteFromCounts(counts, transparentBackground, backgroundColor = null) {
+      const paletteLimit = transparentBackground ? 256 : 256;
       const palette = transparentBackground ? [[0, 0, 0]] : [];
-      palette.push(...Array.from(counts.entries())
-        .sort((left, right) => right[1] - left[1])
-        .slice(0, transparentBackground ? 255 : 256)
-        .map(([key]) => expandColorKey(key)));
+      const backgroundKey = backgroundColor
+        ? quantizeColor(backgroundColor[0], backgroundColor[1], backgroundColor[2])
+        : null;
+      const seenKeys = new Set();
+      if (backgroundKey != null) {
+        palette.push(expandColorKey(backgroundKey));
+        seenKeys.add(backgroundKey);
+      }
+
+      const rankedEntries = Array.from(counts.entries())
+        .filter(([key]) => !seenKeys.has(key))
+        .map(([key, count]) => {
+          const color = expandColorKey(key);
+          const chroma = Math.max(color[0], color[1], color[2]) - Math.min(color[0], color[1], color[2]);
+          const contrast = backgroundColor
+            ? Math.sqrt(colorDistanceSquared(color, backgroundColor))
+            : 96;
+          const score = count * (1 + chroma / 144) * (1 + contrast / 112);
+          return { key, color, count, score };
+        })
+        .sort((left, right) => right.score - left.score || right.count - left.count);
+
+      [30 * 30, 18 * 18, 0].forEach((minimumDistance) => {
+        rankedEntries.forEach((entry) => {
+          if (palette.length >= paletteLimit || seenKeys.has(entry.key)) {
+            return;
+          }
+
+          const isTooClose = minimumDistance > 0
+            && palette.some((color) => colorDistanceSquared(color, entry.color) < minimumDistance);
+          if (isTooClose) {
+            return;
+          }
+
+          palette.push(entry.color);
+          seenKeys.add(entry.key);
+        });
+      });
 
       const tableSize = nextPowerOfTwo(Math.max(2, palette.length));
       while (palette.length < tableSize) {
@@ -2032,10 +2094,10 @@
       return palette;
     }
 
-    function buildGifPalette(frames, transparentBackground) {
+    function buildGifPalette(frames, transparentBackground, backgroundColor = null) {
       const counts = new Map();
       frames.forEach((frame) => collectGifColorCounts(frame, counts, transparentBackground));
-      return buildGifPaletteFromCounts(counts, transparentBackground);
+      return buildGifPaletteFromCounts(counts, transparentBackground, backgroundColor);
     }
 
     function mapFrameToPalette(frame, palette, transparentBackground) {
@@ -2086,8 +2148,10 @@
       const output = [];
       let bitBuffer = 0;
       let bitCount = 0;
-      const codeSize = minCodeSize + 1;
-      const resetInterval = Math.max(16, clearCode - 32);
+      let codeSize = minCodeSize + 1;
+      let pendingCodeSizeIncrease = false;
+      let dictionary = new Map();
+      let nextCode = endCode + 1;
 
       function writeCode(code) {
         bitBuffer += code * (2 ** bitCount);
@@ -2098,21 +2162,58 @@
           bitBuffer = Math.floor(bitBuffer / 256);
           bitCount -= 8;
         }
+
+        if (pendingCodeSizeIncrease) {
+          codeSize += 1;
+          pendingCodeSizeIncrease = false;
+        }
       }
 
-      let codesSinceClear = 0;
-      writeCode(clearCode);
+      function resetDictionary() {
+        dictionary = new Map();
+        nextCode = endCode + 1;
+        codeSize = minCodeSize + 1;
+        pendingCodeSizeIncrease = false;
+      }
 
-      for (let index = 0; index < indices.length; index += 1) {
-        if (codesSinceClear >= resetInterval) {
-          writeCode(clearCode);
-          codesSinceClear = 0;
+      if (!indices.length) {
+        writeCode(clearCode);
+        writeCode(endCode);
+        if (bitCount > 0) {
+          output.push(bitBuffer & 255);
+        }
+        return output;
+      }
+
+      writeCode(clearCode);
+      let prefixCode = indices[0];
+
+      for (let index = 1; index < indices.length; index += 1) {
+        const symbol = indices[index];
+        const key = prefixCode * 256 + symbol;
+
+        if (dictionary.has(key)) {
+          prefixCode = dictionary.get(key);
+          continue;
         }
 
-        writeCode(indices[index]);
-        codesSinceClear += 1;
+        writeCode(prefixCode);
+
+        if (nextCode < 4096) {
+          dictionary.set(key, nextCode);
+          nextCode += 1;
+          if (nextCode === (1 << codeSize) && codeSize < 12) {
+            pendingCodeSizeIncrease = true;
+          }
+        } else {
+          writeCode(clearCode);
+          resetDictionary();
+        }
+
+        prefixCode = symbol;
       }
 
+      writeCode(prefixCode);
       writeCode(endCode);
 
       if (bitCount > 0) {
@@ -2204,6 +2305,7 @@
       try {
         await new Promise((resolve) => requestAnimationFrame(resolve));
         const transparentBackground = !background.color;
+        const backgroundColor = transparentBackground ? null : parseHexColor(background.color);
         const paletteCounts = new Map();
 
         frameTimes.forEach((time) => {
@@ -2211,7 +2313,7 @@
           collectGifColorCounts(captureCtx.getImageData(0, 0, width, height), paletteCounts, transparentBackground);
         });
 
-        const palette = buildGifPaletteFromCounts(paletteCounts, transparentBackground);
+        const palette = buildGifPaletteFromCounts(paletteCounts, transparentBackground, backgroundColor);
         const writer = createGifWriter(width, height, palette);
 
         frameTimes.forEach((time) => {
