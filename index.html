@@ -1060,6 +1060,8 @@
     const fxCanvas = document.getElementById("fxCanvas");
     const paintCtx = paintCanvas.getContext("2d");
     const fxCtx = fxCanvas.getContext("2d");
+    const exportSparkleCanvas = document.createElement("canvas");
+    const exportSparkleCtx = exportSparkleCanvas.getContext("2d");
 
     function buildInkPicker() {
       const fragment = document.createDocumentFragment();
@@ -1565,6 +1567,11 @@
       const sourceScaleX = paintCanvas.width / state.sceneWidth;
       const sourceScaleY = paintCanvas.height / state.sceneHeight;
 
+      if (exportSparkleCanvas.width !== width || exportSparkleCanvas.height !== height) {
+        exportSparkleCanvas.width = width;
+        exportSparkleCanvas.height = height;
+      }
+
       ctx.clearRect(0, 0, width, height);
       if (background.color) {
         ctx.fillStyle = background.color;
@@ -1581,7 +1588,10 @@
         width,
         height
       );
-      drawSparklesToContext(ctx, time, width / bounds.width, height / bounds.height, bounds.x, bounds.y);
+      exportSparkleCtx.clearRect(0, 0, width, height);
+      drawSparklesToContext(exportSparkleCtx, time, width / bounds.width, height / bounds.height, bounds.x, bounds.y);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.drawImage(exportSparkleCanvas, 0, 0, width, height);
     }
 
     function downloadBlob(blob, filename) {
