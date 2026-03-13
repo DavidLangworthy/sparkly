@@ -21,7 +21,7 @@ SUBSCRIPTION_ID="$1"
 RESOURCE_GROUP="$2"
 LOCATION="$3"
 APP_NAME="${4:-sparkly}"
-APP_NAME="${APP_NAME,,}"
+APP_NAME="$(lowercase "$APP_NAME")"
 STATIC_WEB_APP_LOCATION="${STATIC_WEB_APP_LOCATION:-Central US}"
 
 validate_app_name "$APP_NAME"

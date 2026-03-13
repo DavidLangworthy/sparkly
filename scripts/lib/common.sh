@@ -30,6 +30,10 @@ require_command() {
   command -v "$command_name" >/dev/null 2>&1 || die "$command_name is required"
 }
 
+lowercase() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
+}
+
 repo_root() {
   git rev-parse --show-toplevel 2>/dev/null || die "Run this script from inside the sparkly git repository."
 }

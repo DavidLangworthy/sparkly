@@ -17,14 +17,16 @@ require_command az
 
 looks_like_pending_dns_error() {
   local raw_message="$1"
-  local message="${raw_message,,}"
+  local message
+
+  message="$(lowercase "$raw_message")"
 
   [[ "$message" == *"validation"* || "$message" == *"cname"* || "$message" == *"dns"* || "$message" == *"txt"* ]]
 }
 
 RESOURCE_GROUP="$1"
 STATIC_WEB_APP_NAME="$2"
-CUSTOM_DOMAIN="${3,,}"
+CUSTOM_DOMAIN="$(lowercase "$3")"
 HOST_ONLY_LABEL="${CUSTOM_DOMAIN%%.*}"
 
 DEFAULT_HOSTNAME="$(az staticwebapp show \
@@ -61,7 +63,7 @@ if command -v dig >/dev/null 2>&1; then
     exit "$PENDING_DNS_EXIT_CODE"
   fi
 
-  if [[ "${OBSERVED_CNAME,,}" != "${EXPECTED_CNAME,,}" ]]; then
+  if [[ "$(lowercase "$OBSERVED_CNAME")" != "$(lowercase "$EXPECTED_CNAME")" ]]; then
     warn "DNS is not ready yet. $CUSTOM_DOMAIN points to $OBSERVED_CNAME but must point to $EXPECTED_CNAME."
     exit "$PENDING_DNS_EXIT_CODE"
   fi
