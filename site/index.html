@@ -669,8 +669,8 @@
     <section class="stage-panel">
       <div class="stage-meta">
         <div class="ink-readout">
-          <strong id="activeInkName">Metallic Gold</strong>
-          <span id="activeInkNote">Warm foil pigment with champagne glints and slick metallic streaks.</span>
+          <strong id="activeInkName">Rainbow Chrome</strong>
+          <span id="activeInkNote">A shifting chrome ribbon with prismatic sparkles and rotating color flips.</span>
         </div>
         <div class="stage-hint">Draw with one finger, pencil, or pointer. Use two fingers or a trackpad to pan, pinch to zoom, or hold Space and drag.</div>
       </div>
@@ -1213,9 +1213,9 @@
     const backgroundById = new Map(backgroundOptions.map((background) => [background.id, background]));
 
     const state = {
-      activeInkId: inkPresets[0].id,
+      activeInkId: "chrome",
       brushSize: 20,
-      mode: "brush",
+      mode: "spray",
       exportBackgroundId: "paper",
       strokes: [],
       activeStroke: null,
