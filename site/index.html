@@ -694,6 +694,7 @@
             <button class="action-button" id="clearButton" type="button">Clear</button>
             <button class="action-button" id="saveButton" type="button">Save Project</button>
             <button class="action-button" id="openButton" type="button">Open Project</button>
+            <button class="action-button action-button--primary" id="shareButton" type="button" title="Share GIF. Downloads the GIF if native sharing is unavailable.">Share GIF</button>
             <button class="action-button action-button--primary" id="exportButton" type="button">Export PNG</button>
             <button class="action-button action-button--primary" id="gifButton" type="button">Export GIF</button>
           </div>
@@ -1272,6 +1273,7 @@
     const clearButton = document.getElementById("clearButton");
     const saveButton = document.getElementById("saveButton");
     const openButton = document.getElementById("openButton");
+    const shareButton = document.getElementById("shareButton");
     const exportButton = document.getElementById("exportButton");
     const gifButton = document.getElementById("gifButton");
     const canvasSizeForm = document.getElementById("canvasSizeForm");
@@ -1305,6 +1307,7 @@
       startScrollTop: 0
     };
     const exportLabels = {
+      share: "Share GIF",
       png: "Export PNG",
       gif: "Export GIF"
     };
@@ -1418,6 +1421,7 @@
       const isExporting = Boolean(state.exportingKind);
       undoButton.disabled = !hasCommittedStrokes;
       clearButton.disabled = !hasAnything;
+      shareButton.disabled = !hasAnything || isExporting;
       exportButton.disabled = !hasAnything || isExporting;
       gifButton.disabled = !hasAnything || isExporting;
     }
@@ -1431,11 +1435,14 @@
     }
 
     function updateExportButtons() {
+      const isSharingGif = state.exportingKind === "share-gif";
       const isPngExporting = state.exportingKind === "png";
       const isGifExporting = state.exportingKind === "gif";
 
+      shareButton.classList.toggle("is-busy", isSharingGif);
       exportButton.classList.toggle("is-busy", isPngExporting);
       gifButton.classList.toggle("is-busy", isGifExporting);
+      shareButton.textContent = isSharingGif ? "Preparing Share..." : exportLabels.share;
       exportButton.textContent = isPngExporting ? "Rendering PNG..." : exportLabels.png;
       gifButton.textContent = isGifExporting ? "Encoding GIF..." : exportLabels.gif;
     }
@@ -2408,11 +2415,11 @@
       return [...forwardTimes, ...reverseTimes];
     }
 
-    async function exportGif() {
-      if (state.exportingKind) {
-        return;
-      }
+    function getExportFilename(extension) {
+      return `shimmer-ink-${Date.now()}.${extension}`;
+    }
 
+    async function buildGifBlob() {
       const background = getExportBackground();
       const bounds = { x: 0, y: 0, width: state.sceneWidth, height: state.sceneHeight };
       const width = Math.max(1, state.sceneWidth);
@@ -2427,33 +2434,86 @@
 
       captureCanvas.width = width;
       captureCanvas.height = height;
+      const transparentBackground = !background.color;
+      const backgroundColor = transparentBackground ? null : parseHexColor(background.color);
+      const paletteCounts = new Map();
+
+      frameTimes.forEach((time) => {
+        renderCombinedFrame(captureCtx, time, width, height, bounds, background);
+        collectGifColorCounts(captureCtx.getImageData(0, 0, width, height), paletteCounts, transparentBackground);
+      });
+
+      const palette = buildGifPaletteFromCounts(paletteCounts, transparentBackground, backgroundColor);
+      const writer = createGifWriter(width, height, palette);
+
+      frameTimes.forEach((time) => {
+        renderCombinedFrame(captureCtx, time, width, height, bounds, background);
+        appendGifFrame(writer, captureCtx.getImageData(0, 0, width, height), palette, delayCentiseconds, transparentBackground);
+      });
+
+      return new Blob([finishGif(writer)], { type: "image/gif" });
+    }
+
+    function canShareGifFile(file) {
+      return typeof navigator.share === "function"
+        && typeof navigator.canShare === "function"
+        && navigator.canShare({ files: [file] });
+    }
+
+    function isShareAbortError(error) {
+      return Boolean(error) && error.name === "AbortError";
+    }
+
+    async function exportGif() {
+      if (state.exportingKind) {
+        return;
+      }
+
       setExportingKind("gif");
 
       try {
         await waitForNextPaint();
-        const transparentBackground = !background.color;
-        const backgroundColor = transparentBackground ? null : parseHexColor(background.color);
-        const paletteCounts = new Map();
-
-        frameTimes.forEach((time) => {
-          renderCombinedFrame(captureCtx, time, width, height, bounds, background);
-          collectGifColorCounts(captureCtx.getImageData(0, 0, width, height), paletteCounts, transparentBackground);
-        });
-
-        const palette = buildGifPaletteFromCounts(paletteCounts, transparentBackground, backgroundColor);
-        const writer = createGifWriter(width, height, palette);
-
-        frameTimes.forEach((time) => {
-          renderCombinedFrame(captureCtx, time, width, height, bounds, background);
-          appendGifFrame(writer, captureCtx.getImageData(0, 0, width, height), palette, delayCentiseconds, transparentBackground);
-        });
-
-        downloadBlob(
-          new Blob([finishGif(writer)], { type: "image/gif" }),
-          `shimmer-ink-${Date.now()}.gif`
-        );
+        const blob = await buildGifBlob();
+        downloadBlob(blob, getExportFilename("gif"));
       } catch (error) {
         alert("GIF export failed.");
+      } finally {
+        setExportingKind(null);
+      }
+    }
+
+    async function shareGif() {
+      if (state.exportingKind) {
+        return;
+      }
+
+      setExportingKind("share-gif");
+
+      try {
+        await waitForNextPaint();
+        const filename = getExportFilename("gif");
+        const blob = await buildGifBlob();
+        const file = typeof File === "function"
+          ? new File([blob], filename, { type: "image/gif", lastModified: Date.now() })
+          : null;
+
+        if (file && canShareGifFile(file)) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: "Sparkly GIF"
+            });
+            return;
+          } catch (error) {
+            if (isShareAbortError(error)) {
+              return;
+            }
+          }
+        }
+
+        downloadBlob(blob, filename);
+      } catch (error) {
+        alert("GIF share failed.");
       } finally {
         setExportingKind(null);
       }
@@ -2803,20 +2863,20 @@
 
       try {
         await waitForNextPaint();
-      const background = getExportBackground();
-      const bounds = { x: 0, y: 0, width: state.sceneWidth, height: state.sceneHeight };
-      const sourceScaleX = paintCanvas.width / state.sceneWidth;
-      const sourceScaleY = paintCanvas.height / state.sceneHeight;
-      const exportCanvas = document.createElement("canvas");
-      exportCanvas.width = Math.max(1, Math.round(bounds.width * sourceScaleX));
-      exportCanvas.height = Math.max(1, Math.round(bounds.height * sourceScaleY));
-      const exportCtx = exportCanvas.getContext("2d");
-      renderCombinedFrame(exportCtx, performance.now(), exportCanvas.width, exportCanvas.height, bounds, background);
+        const background = getExportBackground();
+        const bounds = { x: 0, y: 0, width: state.sceneWidth, height: state.sceneHeight };
+        const sourceScaleX = paintCanvas.width / state.sceneWidth;
+        const sourceScaleY = paintCanvas.height / state.sceneHeight;
+        const exportCanvas = document.createElement("canvas");
+        exportCanvas.width = Math.max(1, Math.round(bounds.width * sourceScaleX));
+        exportCanvas.height = Math.max(1, Math.round(bounds.height * sourceScaleY));
+        const exportCtx = exportCanvas.getContext("2d");
+        renderCombinedFrame(exportCtx, performance.now(), exportCanvas.width, exportCanvas.height, bounds, background);
 
-      const link = document.createElement("a");
-      link.download = `shimmer-ink-${Date.now()}.png`;
-      link.href = exportCanvas.toDataURL("image/png");
-      link.click();
+        const link = document.createElement("a");
+        link.download = getExportFilename("png");
+        link.href = exportCanvas.toDataURL("image/png");
+        link.click();
       } catch (error) {
         alert("PNG export failed.");
       } finally {
@@ -2847,6 +2907,7 @@
     clearButton.addEventListener("click", clearAllStrokes);
     saveButton.addEventListener("click", saveProject);
     openButton.addEventListener("click", () => projectInput.click());
+    shareButton.addEventListener("click", shareGif);
     exportButton.addEventListener("click", exportPng);
     gifButton.addEventListener("click", exportGif);
     canvasSizeForm.addEventListener("submit", handleCanvasSizeSubmit);
