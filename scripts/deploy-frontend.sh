@@ -11,12 +11,27 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
 
 require_command az
-require_command npx
 
 REPO_ROOT="$(repo_root)"
 RESOURCE_GROUP="$1"
 STATIC_WEB_APP_NAME="$2"
 SITE_ARG="${3:-site}"
+NPX_BIN="$(command -v npx || true)"
+
+if [[ -z "$NPX_BIN" ]]; then
+  for candidate in \
+    /opt/homebrew/bin/npx \
+    /opt/homebrew/opt/node@20/bin/npx \
+    /usr/local/bin/npx
+  do
+    if [[ -x "$candidate" ]]; then
+      NPX_BIN="$candidate"
+      break
+    fi
+  done
+fi
+
+[[ -n "$NPX_BIN" ]] || die "npx is required"
 
 if [[ "$SITE_ARG" = /* ]]; then
   SITE_DIR="$SITE_ARG"
@@ -41,7 +56,7 @@ DEFAULT_HOSTNAME="$(az staticwebapp show \
   -o tsv)"
 
 info "Deploying site from $SITE_DIR to $STATIC_WEB_APP_NAME"
-npx --yes @azure/static-web-apps-cli deploy "$SITE_DIR" \
+"$NPX_BIN" --yes @azure/static-web-apps-cli deploy "$SITE_DIR" \
   --deployment-token "$TOKEN" \
   --env production
 
