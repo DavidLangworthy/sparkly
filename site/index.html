@@ -1034,64 +1034,86 @@
       createInkPreset({
         id: "gold",
         label: "Metallic Gold",
-        note: "Warm foil pigment with amber-to-champagne flips and slick metallic streaks.",
-        baseColors: ["#7b5017", "#d7a238", "#fff0b5"],
+        note: "Antique-to-champagne foil with brighter metallic fire and sharper flash points.",
+        baseColors: ["#53300a", "#ae6e12", "#eab93e", "#fff0b8"],
         sparkleColors: ["rgba(255,248,223,0.96)", "rgba(250,219,142,0.95)"],
-        blendMode: "screen",
-        sheenSpeed: 0.85,
-        sparkleDensity: 0.055,
-        sparkleSizeRange: [1.5, 4.8],
+        blendMode: "lighter",
+        sheenSpeed: 0.94,
+        sparkleDensity: 0.064,
+        sparkleSizeRange: [1.7, 5.3],
+        sparkleHueRange: 180,
+        sparkleBrightnessRange: [0.7, 1.55],
+        sparkleDriftRange: [0.22, 1.2],
+        sparkleHotspotChance: 0.08,
+        sparkleHotspotBoost: 1.45,
         sprayScatter: 18,
         stretch: 1.2,
         squeeze: 0.84,
         pigmentAlpha: 0.84,
-        highlightAlpha: 0.38,
-        edgeAlpha: 0.2,
-        glintStyle: "streak",
+        highlightAlpha: 0.42,
+        edgeAlpha: 0.22,
+        glintStyle: "foil",
         palette: (stamp) => {
-          const hue = 42
-            + Math.sin(stamp.progress * 0.95 + stamp.seed * 4.2) * 8
-            + Math.cos(stamp.progress * 0.18 + stamp.seed * 2.3) * 4;
+          const hue = 43
+            + Math.sin(stamp.progress * 1.02 + stamp.seed * 4.2) * 11
+            + Math.cos(stamp.progress * 0.22 + stamp.seed * 2.6) * 4;
           return [
-            hsl(hue - 8, 70, 24, 0.94),
-            hsl(hue + 2, 86, 48, 0.9),
-            hsl(hue + 18, 92, 82, 0.86)
+            hsl(hue - 14, 68, 16, 0.96),
+            hsl(hue - 4, 78, 34, 0.95),
+            hsl(hue + 8, 94, 54, 0.92),
+            hsl(hue + 18, 100, 84, 0.86)
           ];
         },
-        shineColor: (stamp) => hsl(48 + Math.sin(stamp.progress * 0.7 + stamp.seed * 5) * 10, 100, 90, 0.9),
-        rimColor: (stamp) => hsl(54 + Math.cos(stamp.progress * 0.5 + stamp.seed * 4.4) * 16, 88, 84, 0.28),
-        shadowColor: () => "rgba(83, 47, 9, 0.16)",
-        sparkleColor: (node, time) => hsl(46 + node.hueOffset * 0.05 + Math.sin(time * 0.001 + node.phase) * 14, 100, 84, 0.95)
+        shineColor: (stamp) => hsl(50 + Math.sin(stamp.progress * 0.8 + stamp.seed * 5) * 14, 100, 92, 0.94),
+        rimColor: (stamp) => hsl(56 + Math.cos(stamp.progress * 0.56 + stamp.seed * 4.2) * 18, 92, 84, 0.34),
+        shadowColor: () => "rgba(68, 38, 6, 0.22)",
+        sparkleColor: (node, time) => {
+          const interference = 0.5 + 0.5 * Math.sin(time * 0.0011 + node.phase * 1.4);
+          const hue = 46 + node.hueOffset * 0.08 + interference * 18;
+          return hsl(hue, 100, 78 + interference * 10, 0.96);
+        }
       }),
       createInkPreset({
         id: "silver",
         label: "Metallic Silver",
-        note: "Cool steel pigment with blue-lilac flips and sharper icy glints.",
-        baseColors: ["#505867", "#b3bdcc", "#f8fbff"],
+        note: "Layered steel foil with icy cyan-lilac flashes and brighter mirror cuts.",
+        baseColors: ["#283342", "#677488", "#d7dee9", "#fcfdff"],
         sparkleColors: ["rgba(255,255,255,0.96)", "rgba(204,228,255,0.94)"],
-        blendMode: "screen",
-        sheenSpeed: 1.05,
-        sparkleDensity: 0.058,
-        sparkleSizeRange: [1.4, 4.5],
+        blendMode: "lighter",
+        sheenSpeed: 1.14,
+        sparkleDensity: 0.066,
+        sparkleSizeRange: [1.6, 5.1],
+        sparkleHueRange: 220,
+        sparkleBrightnessRange: [0.72, 1.6],
+        sparkleDriftRange: [0.2, 1.18],
+        sparkleHotspotChance: 0.1,
+        sparkleHotspotBoost: 1.5,
         sprayScatter: 16,
         stretch: 1.18,
         squeeze: 0.82,
         pigmentAlpha: 0.82,
-        highlightAlpha: 0.42,
-        edgeAlpha: 0.24,
-        glintStyle: "streak",
+        highlightAlpha: 0.46,
+        edgeAlpha: 0.26,
+        glintStyle: "foil",
         palette: (stamp) => {
-          const hue = 212 + Math.sin(stamp.progress * 1.1 + stamp.seed * 6.4) * 18;
+          const hue = 214
+            + Math.sin(stamp.progress * 1.12 + stamp.seed * 6.4) * 20
+            + Math.cos(stamp.progress * 0.26 + stamp.seed * 3.4) * 4;
           return [
-            hsl(hue - 6, 14, 34, 0.92),
-            hsl(hue + 6, 24, 72, 0.88),
-            hsl(hue + 36, 34, 96, 0.86)
+            hsl(hue - 18, 18, 16, 0.96),
+            hsl(hue - 4, 18, 36, 0.94),
+            hsl(hue + 8, 20, 74, 0.9),
+            hsl(hue + 30, 42, 96, 0.88)
           ];
         },
-        shineColor: (stamp) => hsl(214 + Math.sin(stamp.progress * 0.9 + stamp.seed * 5.1) * 16, 54, 95, 0.92),
-        rimColor: (stamp) => hsl(238 + Math.cos(stamp.progress * 0.75 + stamp.seed * 4.8) * 18, 48, 88, 0.32),
-        shadowColor: () => "rgba(71, 78, 96, 0.15)",
-        sparkleColor: (node, time) => hsl(218 + node.hueOffset * 0.1 + Math.sin(time * 0.0013 + node.phase) * 26, 78, 90, 0.94)
+        shineColor: (stamp) => hsl(216 + Math.sin(stamp.progress * 0.92 + stamp.seed * 5.1) * 24, 64, 97, 0.94),
+        rimColor: (stamp) => hsl(242 + Math.cos(stamp.progress * 0.76 + stamp.seed * 4.8) * 26, 56, 88, 0.34),
+        shadowColor: () => "rgba(56, 66, 82, 0.2)",
+        sparkleColor: (node, time) => {
+          const interference = Math.sin(time * 0.0013 + node.phase) * 24 + Math.cos(time * 0.0009 + node.drift * 3.8) * 10;
+          const hue = 216 + node.hueOffset * 0.08 + interference;
+          return hsl(hue, 88, 84 + Math.sin(time * 0.0017 + node.phase) * 6, 0.95);
+        }
       }),
       createInkPreset({
         id: "chrome",
@@ -1126,32 +1148,45 @@
       createInkPreset({
         id: "pearl",
         label: "Pearl Mist",
-        note: "Milky ink with pink-blue-green interference and calm satin sheen.",
-        baseColors: ["#ddd2da", "#f1edf5", "#fffefd"],
+        note: "Milky pearl with mint-lilac interference and brighter opaline flashes.",
+        baseColors: ["#918a98", "#dedbe2", "#f5fbf6", "#fff6f7"],
         sparkleColors: ["rgba(255,248,255,0.95)", "rgba(201,244,255,0.9)", "rgba(255,213,235,0.9)"],
-        blendMode: "screen",
-        sheenSpeed: 0.72,
-        sparkleDensity: 0.046,
-        sparkleSizeRange: [1.5, 4.6],
+        blendMode: "lighter",
+        sheenSpeed: 0.86,
+        sparkleDensity: 0.07,
+        sparkleSizeRange: [1.8, 5.4],
+        sparkleHueRange: 260,
+        sparkleBrightnessRange: [0.75, 1.7],
+        sparkleDriftRange: [0.22, 1.24],
+        sparkleHotspotChance: 0.12,
+        sparkleHotspotBoost: 1.5,
         sprayScatter: 16,
         stretch: 1.14,
         squeeze: 0.9,
-        pigmentAlpha: 0.7,
-        highlightAlpha: 0.32,
-        edgeAlpha: 0.14,
-        glintStyle: "soft",
+        pigmentAlpha: 0.74,
+        highlightAlpha: 0.36,
+        edgeAlpha: 0.16,
+        glintStyle: "prism",
         palette: (stamp) => {
-          const hue = 196 + Math.sin(stamp.progress * 1.55 + stamp.seed * 7.2) * 36;
+          const hue = 206
+            + Math.sin(stamp.progress * 1.5 + stamp.seed * 7.2) * 34
+            + Math.cos(stamp.progress * 0.32 + stamp.seed * 2.8) * 10;
           return [
-            hsl(hue - 52, 18, 80, 0.62),
-            hsl(hue + 14, 34, 92, 0.78),
-            hsl(hue + 82, 42, 98, 0.88)
+            hsl(hue - 78, 10, 56, 0.64),
+            hsl(hue - 12, 16, 80, 0.78),
+            hsl(hue + 42, 28, 92, 0.82),
+            hsl(hue + 92, 44, 97, 0.88)
           ];
         },
-        shineColor: (stamp) => hsl(208 + Math.sin(stamp.progress * 1.1 + stamp.seed * 4.2) * 22, 48, 97, 0.86),
-        rimColor: () => "rgba(255,255,255,0.24)",
-        shadowColor: () => "rgba(165, 150, 162, 0.08)",
-        sparkleColor: (node, time) => hsl(204 + node.hueOffset * 0.22 + Math.sin(time * 0.001 + node.phase) * 48, 84, 92, 0.92)
+        shineColor: (stamp) => hsl(208 + Math.sin(stamp.progress * 1.1 + stamp.seed * 4.2) * 26, 54, 97, 0.9),
+        rimColor: (stamp) => hsl(318 + Math.cos(stamp.progress * 0.9 + stamp.seed * 4.1) * 18, 42, 90, 0.28),
+        shadowColor: () => "rgba(120, 112, 128, 0.12)",
+        sparkleColor: (node, time) => {
+          const hue = 204 + node.hueOffset * 0.16 + Math.sin(time * 0.0011 + node.phase) * 54;
+          const saturation = 68 + Math.max(0, Math.sin(node.phase * 2.1)) * 10;
+          const lightness = 90 + Math.cos(time * 0.0013 + node.phase) * 4;
+          return hsl(hue, saturation, lightness, 0.94);
+        }
       }),
       createInkPreset({
         id: "opal",
@@ -1186,32 +1221,44 @@
       createInkPreset({
         id: "rose",
         label: "Rose Foil",
-        note: "Blush foil with copper-apricot flips and polished ribbon highlights.",
-        baseColors: ["#8f4254", "#dd8f9a", "#ffe5d7"],
+        note: "Rose foil with plum-copper body color and brighter champagne flash.",
+        baseColors: ["#613244", "#b46d7e", "#efbcc2", "#fff0dc"],
         sparkleColors: ["rgba(255,227,225,0.95)", "rgba(255,183,190,0.92)", "rgba(255,235,194,0.9)"],
-        blendMode: "screen",
-        sheenSpeed: 1.08,
-        sparkleDensity: 0.058,
-        sparkleSizeRange: [1.5, 4.9],
+        blendMode: "lighter",
+        sheenSpeed: 1.12,
+        sparkleDensity: 0.063,
+        sparkleSizeRange: [1.6, 5],
+        sparkleHueRange: 170,
+        sparkleBrightnessRange: [0.7, 1.5],
+        sparkleDriftRange: [0.2, 1.16],
+        sparkleHotspotChance: 0.08,
+        sparkleHotspotBoost: 1.42,
         sprayScatter: 18,
         stretch: 1.22,
         squeeze: 0.82,
         pigmentAlpha: 0.84,
-        highlightAlpha: 0.4,
-        edgeAlpha: 0.18,
-        glintStyle: "streak",
+        highlightAlpha: 0.44,
+        edgeAlpha: 0.2,
+        glintStyle: "foil",
         palette: (stamp) => {
-          const hue = 350 + Math.sin(stamp.progress * 1.02 + stamp.seed * 5.6) * 12;
+          const hue = 352
+            + Math.sin(stamp.progress * 1.04 + stamp.seed * 5.6) * 14
+            + Math.cos(stamp.progress * 0.24 + stamp.seed * 2.5) * 4;
           return [
-            hsl(hue + 4, 42, 36, 0.92),
-            hsl(hue + 20, 64, 70, 0.88),
-            hsl(hue + 38, 88, 88, 0.84)
+            hsl(hue - 10, 34, 18, 0.96),
+            hsl(hue + 2, 44, 36, 0.95),
+            hsl(hue + 16, 66, 68, 0.9),
+            hsl(hue + 32, 100, 88, 0.84)
           ];
         },
-        shineColor: (stamp) => hsl(20 + Math.sin(stamp.progress * 0.82 + stamp.seed * 4.3) * 10, 100, 92, 0.92),
-        rimColor: (stamp) => hsl(358 + Math.cos(stamp.progress * 0.68 + stamp.seed * 4.1) * 14, 74, 86, 0.3),
-        shadowColor: () => "rgba(102, 43, 58, 0.14)",
-        sparkleColor: (node, time) => hsl(10 + node.hueOffset * 0.08 + Math.sin(time * 0.0012 + node.phase) * 18, 96, 84, 0.94)
+        shineColor: (stamp) => hsl(24 + Math.sin(stamp.progress * 0.82 + stamp.seed * 4.3) * 12, 100, 92, 0.94),
+        rimColor: (stamp) => hsl(4 + Math.cos(stamp.progress * 0.68 + stamp.seed * 4.1) * 16, 78, 86, 0.32),
+        shadowColor: () => "rgba(88, 38, 48, 0.18)",
+        sparkleColor: (node, time) => {
+          const interference = 0.5 + 0.5 * Math.sin(time * 0.0012 + node.phase * 1.1);
+          const hue = 9 + node.hueOffset * 0.08 + interference * 16;
+          return hsl(hue, 96, 82 + interference * 10, 0.95);
+        }
       }),
       createInkPreset({
         id: "galaxy",
