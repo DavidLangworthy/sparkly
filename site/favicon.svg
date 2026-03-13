@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="glow" cx="32" cy="24" r="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff8de"/>
+      <stop offset="0.28" stop-color="#ffd76c"/>
+      <stop offset="0.56" stop-color="#ff7b83"/>
+      <stop offset="0.8" stop-color="#6de5c2"/>
+      <stop offset="1" stop-color="#4f5eff"/>
+    </radialGradient>
+    <linearGradient id="stem" x1="18" y1="54" x2="46" y2="14" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7b4a12"/>
+      <stop offset="1" stop-color="#f7d18a"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#f8edd7"/>
+  <circle cx="32" cy="32" r="26" fill="url(#glow)" opacity="0.22"/>
+  <path d="M19 47L31.5 14.5C32.1 13 34.2 13 34.8 14.5L45 40.5C45.7 42.3 44.4 44.3 42.5 44.3H35.8L39.8 54L32.2 49.6L24.8 54L28.4 44.3H21.5C19.6 44.3 18.3 42.3 19 40.5Z" fill="url(#stem)"/>
+  <path d="M32 6L34.8 14.2L43 17L34.8 19.8L32 28L29.2 19.8L21 17L29.2 14.2Z" fill="#fff7de"/>
+  <path d="M50 18L51.7 23.3L57 25L51.7 26.7L50 32L48.3 26.7L43 25L48.3 23.3Z" fill="#ffe8ff"/>
+  <circle cx="17" cy="21" r="2.6" fill="#fffaf2"/>
+</svg>
