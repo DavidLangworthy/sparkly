@@ -398,6 +398,7 @@
     }
 
     .action-button {
+      position: relative;
       color: var(--ink);
       background: rgba(255, 255, 255, 0.46);
       border-color: rgba(128, 97, 60, 0.12);
@@ -413,6 +414,34 @@
       cursor: not-allowed;
       opacity: 0.4;
       transform: none;
+    }
+
+    .action-button.is-busy {
+      opacity: 1;
+      color: #2a1c0f;
+      background:
+        linear-gradient(120deg, rgba(255, 243, 210, 0.98), rgba(255, 188, 122, 0.92) 34%, rgba(255, 141, 170, 0.9) 60%, rgba(135, 230, 214, 0.92));
+      box-shadow:
+        0 0 0 3px rgba(236, 175, 91, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.72),
+        0 10px 18px rgba(101, 57, 18, 0.16);
+    }
+
+    .action-button.is-busy:disabled {
+      opacity: 1;
+    }
+
+    .action-button.is-busy::after {
+      content: "";
+      display: inline-block;
+      width: 0.82em;
+      height: 0.82em;
+      margin-left: 0.5em;
+      border-radius: 999px;
+      border: 2px solid rgba(116, 65, 12, 0.28);
+      border-top-color: rgba(116, 65, 12, 0.96);
+      animation: export-spin 0.7s linear infinite;
+      vertical-align: -0.1em;
     }
 
     .stage-panel {
@@ -534,6 +563,12 @@
       to {
         opacity: 1;
         transform: translateY(0);
+      }
+    }
+
+    @keyframes export-spin {
+      to {
+        transform: rotate(360deg);
       }
     }
 
@@ -1217,6 +1252,7 @@
       brushSize: 20,
       mode: "spray",
       exportBackgroundId: "paper",
+      exportingKind: null,
       strokes: [],
       activeStroke: null,
       isDrawing: false,
@@ -1267,6 +1303,10 @@
       startClientY: 0,
       startScrollLeft: 0,
       startScrollTop: 0
+    };
+    const exportLabels = {
+      png: "Export PNG",
+      gif: "Export GIF"
     };
 
     function buildInkPicker() {
@@ -1375,10 +1415,35 @@
     function updateActionButtons() {
       const hasCommittedStrokes = state.strokes.length > 0;
       const hasAnything = hasCommittedStrokes || Boolean(state.activeStroke);
+      const isExporting = Boolean(state.exportingKind);
       undoButton.disabled = !hasCommittedStrokes;
       clearButton.disabled = !hasAnything;
-      exportButton.disabled = !hasAnything;
-      gifButton.disabled = !hasAnything;
+      exportButton.disabled = !hasAnything || isExporting;
+      gifButton.disabled = !hasAnything || isExporting;
+    }
+
+    function waitForNextPaint() {
+      return new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(resolve);
+        });
+      });
+    }
+
+    function updateExportButtons() {
+      const isPngExporting = state.exportingKind === "png";
+      const isGifExporting = state.exportingKind === "gif";
+
+      exportButton.classList.toggle("is-busy", isPngExporting);
+      gifButton.classList.toggle("is-busy", isGifExporting);
+      exportButton.textContent = isPngExporting ? "Rendering PNG..." : exportLabels.png;
+      gifButton.textContent = isGifExporting ? "Encoding GIF..." : exportLabels.gif;
+    }
+
+    function setExportingKind(nextKind) {
+      state.exportingKind = nextKind;
+      updateExportButtons();
+      updateActionButtons();
     }
 
     function setBrushSize(nextSize) {
@@ -2344,6 +2409,10 @@
     }
 
     async function exportGif() {
+      if (state.exportingKind) {
+        return;
+      }
+
       const background = getExportBackground();
       const bounds = { x: 0, y: 0, width: state.sceneWidth, height: state.sceneHeight };
       const width = Math.max(1, state.sceneWidth);
@@ -2354,16 +2423,14 @@
       const loopDuration = 1800;
       const delayCentiseconds = Math.max(2, Math.round(loopDuration / frameCount / 10));
       const startTime = performance.now();
-      const originalLabel = gifButton.textContent;
       const frameTimes = buildGifFrameTimes(startTime, frameCount, loopDuration);
 
       captureCanvas.width = width;
       captureCanvas.height = height;
-      gifButton.disabled = true;
-      gifButton.textContent = "Encoding...";
+      setExportingKind("gif");
 
       try {
-        await new Promise((resolve) => requestAnimationFrame(resolve));
+        await waitForNextPaint();
         const transparentBackground = !background.color;
         const backgroundColor = transparentBackground ? null : parseHexColor(background.color);
         const paletteCounts = new Map();
@@ -2388,8 +2455,7 @@
       } catch (error) {
         alert("GIF export failed.");
       } finally {
-        gifButton.textContent = originalLabel;
-        updateActionButtons();
+        setExportingKind(null);
       }
     }
 
@@ -2728,7 +2794,15 @@
       updateActionButtons();
     }
 
-    function exportPng() {
+    async function exportPng() {
+      if (state.exportingKind) {
+        return;
+      }
+
+      setExportingKind("png");
+
+      try {
+        await waitForNextPaint();
       const background = getExportBackground();
       const bounds = { x: 0, y: 0, width: state.sceneWidth, height: state.sceneHeight };
       const sourceScaleX = paintCanvas.width / state.sceneWidth;
@@ -2743,6 +2817,11 @@
       link.download = `shimmer-ink-${Date.now()}.png`;
       link.href = exportCanvas.toDataURL("image/png");
       link.click();
+      } catch (error) {
+        alert("PNG export failed.");
+      } finally {
+        setExportingKind(null);
+      }
     }
 
     function animate(time) {
@@ -2787,6 +2866,8 @@
     buildBackgroundPicker();
     setBrushSize(state.brushSize);
     updateModeButtons();
+    updateInkReadout();
+    updateExportButtons();
     updateActionButtons();
     updateCanvasBackground();
     initializeStage();
