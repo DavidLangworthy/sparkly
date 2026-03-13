@@ -2326,6 +2326,22 @@
       return finishGif(writer);
     }
 
+    function buildGifFrameTimes(startTime, frameCount, loopDuration) {
+      if (frameCount <= 1) {
+        return [startTime];
+      }
+
+      const forwardFrameCount = Math.floor(frameCount / 2) + 1;
+      const frameStep = loopDuration / frameCount;
+      const forwardTimes = Array.from(
+        { length: forwardFrameCount },
+        (_, index) => startTime + frameStep * index
+      );
+      const reverseTimes = forwardTimes.slice(1, -1).reverse();
+
+      return [...forwardTimes, ...reverseTimes];
+    }
+
     async function exportGif() {
       const background = getExportBackground();
       const bounds = { x: 0, y: 0, width: state.sceneWidth, height: state.sceneHeight };
@@ -2338,10 +2354,7 @@
       const delayCentiseconds = Math.max(2, Math.round(loopDuration / frameCount / 10));
       const startTime = performance.now();
       const originalLabel = gifButton.textContent;
-      const frameTimes = Array.from(
-        { length: frameCount },
-        (_, index) => startTime + (loopDuration / frameCount) * index
-      );
+      const frameTimes = buildGifFrameTimes(startTime, frameCount, loopDuration);
 
       captureCanvas.width = width;
       captureCanvas.height = height;
