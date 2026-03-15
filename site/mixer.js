@@ -21,10 +21,9 @@ import {
   paletteSeedPresets,
   paletteSeedById,
   inkSeedPresets,
-  inkSeedById,
-  inksByPaletteId,
-  upgradeLegacyRecipeToPaletteInk
+  inkSeedById
 } from "./glitter-algebra.js";
+import { upgradeLegacyRecipeToPaletteInk } from "./from-preset.js";
 import { createCanvasController } from "./canvas.js";
 
 const DESIGNER_PREVIEW_ID = "designer-preview";
