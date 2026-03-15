@@ -7,15 +7,17 @@ import {
   inkById,
   backgroundOptions,
   backgroundById,
+  createSparkleNode
+} from "./ink.js";
+import {
   blendModeOptions,
   glintStyleOptions,
   normalizePresetRecipe,
   fromPreset,
   generatePresetSnippet,
   mixerSeedPresets,
-  mixerSeedById,
-  createSparkleNode
-} from "./ink.js";
+  mixerSeedById
+} from "./from-preset.js";
 import { createCanvasController } from "./canvas.js";
 
 const DESIGNER_PREVIEW_ID = "designer-preview";
