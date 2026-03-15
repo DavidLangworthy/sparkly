@@ -12,62 +12,27 @@ import {
 import {
   blendModeOptions,
   glintStyleOptions,
-  normalizePresetRecipe,
-  fromPreset,
-  generatePresetSnippet,
-  mixerSeedPresets,
-  mixerSeedById
-} from "./from-preset.js";
+  normalizePaletteDefinition,
+  normalizeInkDefinition,
+  fromPaletteInk,
+  generatePaletteSnippet,
+  generateInkSnippet,
+  generatePairSnippet,
+  paletteSeedPresets,
+  paletteSeedById,
+  inkSeedPresets,
+  inkSeedById,
+  inksByPaletteId,
+  upgradeLegacyRecipeToPaletteInk
+} from "./glitter-algebra.js";
 import { createCanvasController } from "./canvas.js";
 
 const DESIGNER_PREVIEW_ID = "designer-preview";
-const DRAFT_STORAGE_KEY = "sparkly.mixer.draft.v1";
+const WORKSPACE_STORAGE_KEY = "sparkly.mixer.workspace.v2";
+const LEGACY_STORAGE_KEY = "sparkly.mixer.draft.v1";
 const LOOP_DURATION = 1800;
 
-const BODY_CONTROL_DEFS = [
-  {
-    path: "body.stretch",
-    label: "Foil Stretch",
-    caption: "How wide the body stretches across the stroke.",
-    min: 0.7,
-    max: 1.5,
-    step: 0.01
-  },
-  {
-    path: "body.squeeze",
-    label: "Body Squeeze",
-    caption: "How narrow the pigment compresses vertically.",
-    min: 0.6,
-    max: 1.1,
-    step: 0.01
-  },
-  {
-    path: "body.pigmentAlpha",
-    label: "Body Opacity",
-    caption: "The weight of the pigment body.",
-    min: 0,
-    max: 1,
-    step: 0.01
-  },
-  {
-    path: "body.highlightAlpha",
-    label: "Top Shine",
-    caption: "The soft highlight streak through the body.",
-    min: 0,
-    max: 1,
-    step: 0.01
-  },
-  {
-    path: "body.edgeAlpha",
-    label: "Edge Shine",
-    caption: "The thin edge light that trims the pigment.",
-    min: 0,
-    max: 1,
-    step: 0.01
-  }
-];
-
-const SPARKLE_CONTROL_DEFS = [
+const PALETTE_CONTROL_DEFS = [
   {
     path: "finish.sheenSpeed",
     label: "Flash Speed",
@@ -77,7 +42,55 @@ const SPARKLE_CONTROL_DEFS = [
     step: 0.01
   },
   {
-    path: "sparkle.density",
+    path: "bodyProfile.stretch",
+    label: "Foil Stretch",
+    caption: "How wide the body stretches across the stroke.",
+    min: 0.7,
+    max: 1.5,
+    step: 0.01
+  },
+  {
+    path: "bodyProfile.squeeze",
+    label: "Body Squeeze",
+    caption: "How narrow the pigment compresses vertically.",
+    min: 0.6,
+    max: 1.1,
+    step: 0.01
+  },
+  {
+    path: "bodyProfile.sprayScatter",
+    label: "Spray Scatter",
+    caption: "How far spray particles fling outward.",
+    min: 6,
+    max: 32,
+    step: 1
+  },
+  {
+    path: "bodyProfile.pigmentAlpha",
+    label: "Body Opacity",
+    caption: "The weight of the pigment body.",
+    min: 0,
+    max: 1,
+    step: 0.01
+  },
+  {
+    path: "bodyProfile.highlightAlpha",
+    label: "Top Shine",
+    caption: "The soft highlight streak through the body.",
+    min: 0,
+    max: 1,
+    step: 0.01
+  },
+  {
+    path: "bodyProfile.edgeAlpha",
+    label: "Edge Shine",
+    caption: "The thin edge light that trims the pigment.",
+    min: 0,
+    max: 1,
+    step: 0.01
+  },
+  {
+    path: "sparkleProfile.density",
     label: "Sparkle Crowd",
     caption: "How often sparkles get emitted along the stroke.",
     min: 0,
@@ -85,7 +98,7 @@ const SPARKLE_CONTROL_DEFS = [
     step: 0.001
   },
   {
-    path: "sparkle.sizeMin",
+    path: "sparkleProfile.sizeMin",
     label: "Sparkle Size Min",
     caption: "The smallest glint size.",
     min: 0.4,
@@ -93,7 +106,7 @@ const SPARKLE_CONTROL_DEFS = [
     step: 0.1
   },
   {
-    path: "sparkle.sizeMax",
+    path: "sparkleProfile.sizeMax",
     label: "Sparkle Size Max",
     caption: "The largest glint size.",
     min: 0.8,
@@ -101,7 +114,7 @@ const SPARKLE_CONTROL_DEFS = [
     step: 0.1
   },
   {
-    path: "sparkle.driftMin",
+    path: "sparkleProfile.driftMin",
     label: "Drift Min",
     caption: "The gentlest sparkle travel.",
     min: 0,
@@ -109,7 +122,7 @@ const SPARKLE_CONTROL_DEFS = [
     step: 0.01
   },
   {
-    path: "sparkle.driftMax",
+    path: "sparkleProfile.driftMax",
     label: "Drift Max",
     caption: "The boldest sparkle travel.",
     min: 0,
@@ -118,181 +131,81 @@ const SPARKLE_CONTROL_DEFS = [
   }
 ];
 
-const MOTION_CONTROL_DEFS = [
+const PALETTE_ADVANCED_CONTROL_DEFS = [
+  { path: "bodyMotion.sinProgressFreq", label: "Wave A Progress Freq", caption: "How fast the first body wave changes along a stroke.", min: 0, max: 12, step: 0.01 },
+  { path: "bodyMotion.sinSeedFreq", label: "Wave A Seed Freq", caption: "How much the first body wave reacts to per-stroke seed.", min: 0, max: 12, step: 0.01 },
+  { path: "bodyMotion.sinAmplitude", label: "Wave A Width", caption: "How far the first body wave swings in hue.", min: 0, max: 120, step: 1 },
+  { path: "bodyMotion.cosProgressFreq", label: "Wave B Progress Freq", caption: "How fast the second body wave changes along a stroke.", min: 0, max: 12, step: 0.01 },
+  { path: "bodyMotion.cosSeedFreq", label: "Wave B Seed Freq", caption: "How much the second body wave reacts to per-stroke seed.", min: 0, max: 12, step: 0.01 },
+  { path: "bodyMotion.cosAmplitude", label: "Wave B Width", caption: "How far the second body wave swings in hue.", min: 0, max: 120, step: 1 },
+  { path: "shineMotion.progressFreq", label: "Shine Progress Freq", caption: "How fast shine changes along the stroke.", min: 0, max: 12, step: 0.01 },
+  { path: "shineMotion.seedFreq", label: "Shine Seed Freq", caption: "How much shine reacts to per-stroke seed.", min: 0, max: 12, step: 0.01 },
+  { path: "shineMotion.amplitude", label: "Shine Hue Swing", caption: "Hue travel of the shine layer.", min: 0, max: 120, step: 1 },
+  { path: "rimMotion.progressFreq", label: "Rim Progress Freq", caption: "How fast the rim changes along the stroke.", min: 0, max: 12, step: 0.01 },
+  { path: "rimMotion.seedFreq", label: "Rim Seed Freq", caption: "How much the rim reacts to per-stroke seed.", min: 0, max: 12, step: 0.01 },
+  { path: "rimMotion.amplitude", label: "Rim Hue Swing", caption: "Hue travel of the rim light.", min: 0, max: 120, step: 1 },
+  { path: "sparkleProfile.hueRange", label: "Sparkle Hue Range", caption: "How wide sparkle hue offsets can spread.", min: 0, max: 360, step: 1 },
+  { path: "sparkleProfile.brightnessMin", label: "Brightness Min", caption: "The dimmest sparkle brightness.", min: 0.1, max: 2, step: 0.01 },
+  { path: "sparkleProfile.brightnessMax", label: "Brightness Max", caption: "The brightest sparkle brightness.", min: 0.1, max: 2, step: 0.01 },
+  { path: "sparkleProfile.hotspotChance", label: "Hotspot Chance", caption: "How often a sparkle gets an extra brightness boost.", min: 0, max: 0.4, step: 0.01 },
+  { path: "sparkleProfile.hotspotBoost", label: "Hotspot Boost", caption: "The multiplier for hotspot sparkles.", min: 1, max: 2.2, step: 0.01 },
+  { path: "sparkleMotion.hueOffsetScale", label: "Hue Offset Scale", caption: "How much each sparkle reacts to its hue offset.", min: 0, max: 2, step: 0.01 },
+  { path: "sparkleMotion.timeSinSpeed", label: "Sin Speed", caption: "How fast the first sparkle hue swing animates.", min: 0, max: 0.01, step: 0.0001 },
+  { path: "sparkleMotion.timeSinAmplitude", label: "Sin Swing", caption: "The first time-based hue swing in the sparkles.", min: 0, max: 120, step: 1 },
+  { path: "sparkleMotion.timeCosSpeed", label: "Cos Speed", caption: "How fast the second sparkle hue swing animates.", min: 0, max: 0.01, step: 0.0001 },
+  { path: "sparkleMotion.timeCosAmplitude", label: "Cos Swing", caption: "The second time-based hue swing in the sparkles.", min: 0, max: 120, step: 1 }
+];
+
+const INK_CONTROL_DEFS = [
   {
-    path: "paletteMotion.hueBase",
+    path: "body.hueBase",
     label: "Body Hue Base",
     caption: "The main color center for the pigment body.",
     min: 0,
     max: 360,
     step: 1
-  },
-  {
-    path: "paletteMotion.sinAmplitude",
-    label: "Wave A Width",
-    caption: "How far the first body wave swings in hue.",
-    min: 0,
-    max: 120,
-    step: 1
-  },
-  {
-    path: "paletteMotion.cosAmplitude",
-    label: "Wave B Width",
-    caption: "How far the second body wave swings in hue.",
-    min: 0,
-    max: 120,
-    step: 1
-  },
-  {
-    path: "sparkleMotion.hueBase",
-    label: "Sparkle Hue Base",
-    caption: "The center color for glints before motion kicks in.",
-    min: 0,
-    max: 360,
-    step: 1
-  },
-  {
-    path: "sparkleMotion.hueOffsetScale",
-    label: "Hue Offset Scale",
-    caption: "How much each sparkle reacts to its hue offset.",
-    min: 0,
-    max: 2,
-    step: 0.01
-  },
-  {
-    path: "sparkleMotion.timeSinAmplitude",
-    label: "Sin Swing",
-    caption: "The first time-based hue swing in the sparkles.",
-    min: 0,
-    max: 120,
-    step: 1
-  },
-  {
-    path: "sparkleMotion.timeCosAmplitude",
-    label: "Cos Swing",
-    caption: "The second time-based hue swing in the sparkles.",
-    min: 0,
-    max: 120,
-    step: 1
-  },
-  {
-    path: "sparkleMotion.saturationBase",
-    label: "Sparkle Saturation",
-    caption: "How intense the sparkle colors read overall.",
-    min: 0,
-    max: 100,
-    step: 1
-  },
-  {
-    path: "sparkleMotion.lightnessBase",
-    label: "Sparkle Lightness",
-    caption: "How bright the sparkles feel at rest.",
-    min: 0,
-    max: 100,
-    step: 1
   }
 ];
 
-const ADVANCED_BODY_CONTROL_DEFS = [
-  {
-    path: "body.sprayScatter",
-    label: "Spray Scatter",
-    caption: "How far spray particles fling outward.",
-    min: 6,
-    max: 32,
-    step: 1
-  }
-];
-
-const ADVANCED_PALETTE_CONTROL_DEFS = [
-  {
-    path: "paletteMotion.sinProgressFreq",
-    label: "Wave A Progress Freq",
-    caption: "How fast the first body wave changes along a stroke.",
-    min: 0,
-    max: 12,
-    step: 0.01
-  },
-  {
-    path: "paletteMotion.sinSeedFreq",
-    label: "Wave A Seed Freq",
-    caption: "How much the first body wave reacts to seed variation.",
-    min: 0,
-    max: 12,
-    step: 0.01
-  },
-  {
-    path: "paletteMotion.cosProgressFreq",
-    label: "Wave B Progress Freq",
-    caption: "How fast the second body wave changes along a stroke.",
-    min: 0,
-    max: 12,
-    step: 0.01
-  },
-  {
-    path: "paletteMotion.cosSeedFreq",
-    label: "Wave B Seed Freq",
-    caption: "How much the second body wave reacts to seed variation.",
-    min: 0,
-    max: 12,
-    step: 0.01
-  }
-];
-
-const ADVANCED_SHINE_CONTROL_DEFS = [
+const INK_ADVANCED_CONTROL_DEFS = [
   { path: "shine.hueBase", label: "Shine Hue Base", caption: "Base hue for the top sheen.", min: 0, max: 360, step: 1 },
-  { path: "shine.progressFreq", label: "Shine Progress Freq", caption: "How fast shine changes along the stroke.", min: 0, max: 12, step: 0.01 },
-  { path: "shine.seedFreq", label: "Shine Seed Freq", caption: "How much shine reacts to per-stroke seed.", min: 0, max: 12, step: 0.01 },
-  { path: "shine.amplitude", label: "Shine Hue Swing", caption: "Hue travel of the shine layer.", min: 0, max: 120, step: 1 },
   { path: "shine.saturation", label: "Shine Saturation", caption: "Color intensity of the shine layer.", min: 0, max: 100, step: 1 },
   { path: "shine.lightness", label: "Shine Lightness", caption: "Brightness of the shine layer.", min: 0, max: 100, step: 1 },
-  { path: "shine.alpha", label: "Shine Alpha", caption: "Opacity of the shine layer.", min: 0, max: 1, step: 0.01 }
-];
-
-const ADVANCED_RIM_CONTROL_DEFS = [
+  { path: "shine.alpha", label: "Shine Alpha", caption: "Opacity of the shine layer.", min: 0, max: 1, step: 0.01 },
   { path: "rim.hueBase", label: "Rim Hue Base", caption: "Base hue for the edge light.", min: 0, max: 360, step: 1 },
-  { path: "rim.progressFreq", label: "Rim Progress Freq", caption: "How fast the rim changes along the stroke.", min: 0, max: 12, step: 0.01 },
-  { path: "rim.seedFreq", label: "Rim Seed Freq", caption: "How much the rim reacts to per-stroke seed.", min: 0, max: 12, step: 0.01 },
-  { path: "rim.amplitude", label: "Rim Hue Swing", caption: "Hue travel of the rim light.", min: 0, max: 120, step: 1 },
   { path: "rim.saturation", label: "Rim Saturation", caption: "Color intensity of the rim light.", min: 0, max: 100, step: 1 },
   { path: "rim.lightness", label: "Rim Lightness", caption: "Brightness of the rim light.", min: 0, max: 100, step: 1 },
-  { path: "rim.alpha", label: "Rim Alpha", caption: "Opacity of the rim light.", min: 0, max: 1, step: 0.01 }
-];
-
-const ADVANCED_SPARKLE_CONTROL_DEFS = [
-  { path: "sparkle.hueRange", label: "Sparkle Hue Range", caption: "How wide sparkle hue offsets can spread.", min: 0, max: 360, step: 1 },
-  { path: "sparkle.brightnessMin", label: "Brightness Min", caption: "The dimmest sparkle brightness.", min: 0.1, max: 2, step: 0.01 },
-  { path: "sparkle.brightnessMax", label: "Brightness Max", caption: "The brightest sparkle brightness.", min: 0.1, max: 2, step: 0.01 },
-  { path: "sparkle.hotspotChance", label: "Hotspot Chance", caption: "How often a sparkle gets an extra brightness boost.", min: 0, max: 0.4, step: 0.01 },
-  { path: "sparkle.hotspotBoost", label: "Hotspot Boost", caption: "The multiplier for hotspot sparkles.", min: 1, max: 2.2, step: 0.01 },
-  { path: "sparkleMotion.timeSinSpeed", label: "Sin Speed", caption: "How fast the first sparkle hue swing animates.", min: 0, max: 0.01, step: 0.0001 },
-  { path: "sparkleMotion.timeCosSpeed", label: "Cos Speed", caption: "How fast the second sparkle hue swing animates.", min: 0, max: 0.01, step: 0.0001 },
-  { path: "sparkleMotion.saturationAmplitude", label: "Saturation Swing", caption: "How much sparkle saturation pulses.", min: 0, max: 100, step: 1 },
-  { path: "sparkleMotion.lightnessAmplitude", label: "Lightness Swing", caption: "How much sparkle brightness pulses.", min: 0, max: 100, step: 1 },
-  { path: "sparkleMotion.alpha", label: "Sparkle Alpha", caption: "The overall opacity of glints.", min: 0, max: 1, step: 0.01 }
+  { path: "rim.alpha", label: "Rim Alpha", caption: "Opacity of the rim light.", min: 0, max: 1, step: 0.01 },
+  { path: "sparkle.hueBase", label: "Sparkle Hue Base", caption: "The center color for glints before motion kicks in.", min: 0, max: 360, step: 1 },
+  { path: "sparkle.saturationBase", label: "Sparkle Saturation", caption: "How intense the sparkle colors read overall.", min: 0, max: 100, step: 1 },
+  { path: "sparkle.saturationAmplitude", label: "Saturation Swing", caption: "How much sparkle saturation pulses.", min: 0, max: 100, step: 1 },
+  { path: "sparkle.lightnessBase", label: "Sparkle Lightness", caption: "How bright the sparkles feel at rest.", min: 0, max: 100, step: 1 },
+  { path: "sparkle.lightnessAmplitude", label: "Lightness Swing", caption: "How much sparkle brightness pulses.", min: 0, max: 100, step: 1 },
+  { path: "sparkle.alpha", label: "Sparkle Alpha", caption: "The overall opacity of glints.", min: 0, max: 1, step: 0.01 }
 ];
 
 const dom = {
-  seedSelect: document.getElementById("seedSelect"),
-  recipeLabel: document.getElementById("recipeLabel"),
-  recipeId: document.getElementById("recipeId"),
-  recipeNote: document.getElementById("recipeNote"),
+  paletteSelect: document.getElementById("paletteSelect"),
+  inkSelect: document.getElementById("inkSelect"),
+  inkSelectHint: document.getElementById("inkSelectHint"),
   backgroundPicker: document.getElementById("backgroundPicker"),
-  resetSeedButton: document.getElementById("resetSeedButton"),
-  copyCodeButton: document.getElementById("copyCodeButton"),
-  copyRecipeButton: document.getElementById("copyRecipeButton"),
-  bodyControls: document.getElementById("bodyControls"),
+  resetPaletteButton: document.getElementById("resetPaletteButton"),
+  resetInkButton: document.getElementById("resetInkButton"),
+  copyPaletteCodeButton: document.getElementById("copyPaletteCodeButton"),
+  copyInkCodeButton: document.getElementById("copyInkCodeButton"),
+  copyPairJsonButton: document.getElementById("copyPairJsonButton"),
+  paletteScopeText: document.getElementById("paletteScopeText"),
+  paletteControls: document.getElementById("paletteControls"),
+  paletteBlendModeButtons: document.getElementById("paletteBlendModeButtons"),
+  paletteGlintStyleButtons: document.getElementById("paletteGlintStyleButtons"),
+  inkLabel: document.getElementById("inkLabel"),
+  inkId: document.getElementById("inkId"),
+  inkNote: document.getElementById("inkNote"),
+  inkControls: document.getElementById("inkControls"),
   paletteGrid: document.getElementById("paletteGrid"),
-  sparkleControls: document.getElementById("sparkleControls"),
   sparkleColorGrid: document.getElementById("sparkleColorGrid"),
-  motionControls: document.getElementById("motionControls"),
-  blendModeButtons: document.getElementById("blendModeButtons"),
-  glintStyleButtons: document.getElementById("glintStyleButtons"),
-  advancedBodyControls: document.getElementById("advancedBodyControls"),
-  advancedPaletteControls: document.getElementById("advancedPaletteControls"),
-  advancedShineControls: document.getElementById("advancedShineControls"),
-  advancedRimControls: document.getElementById("advancedRimControls"),
-  advancedSparkleControls: document.getElementById("advancedSparkleControls"),
+  paletteAdvancedControls: document.getElementById("paletteAdvancedControls"),
+  inkAdvancedControls: document.getElementById("inkAdvancedControls"),
   shadowColorInput: document.getElementById("shadowColorInput"),
   layerModeButtons: document.getElementById("layerModeButtons"),
   playPauseButton: document.getElementById("playPauseButton"),
@@ -315,13 +228,16 @@ const dom = {
   sandboxFxCanvas: document.getElementById("sandboxFxCanvas"),
   sandboxCanvasWidthInput: document.getElementById("sandboxCanvasWidthInput"),
   sandboxCanvasHeightInput: document.getElementById("sandboxCanvasHeightInput"),
-  codeOutput: document.getElementById("codeOutput"),
-  copyCodeButtonSecondary: document.getElementById("copyCodeButtonSecondary"),
-  recipeJsonOutput: document.getElementById("recipeJsonOutput"),
-  applyJsonButton: document.getElementById("applyJsonButton"),
-  downloadRecipeButton: document.getElementById("downloadRecipeButton"),
-  importRecipeButton: document.getElementById("importRecipeButton"),
-  recipeImportInput: document.getElementById("recipeImportInput"),
+  paletteCodeOutput: document.getElementById("paletteCodeOutput"),
+  copyPaletteCodeButtonSecondary: document.getElementById("copyPaletteCodeButtonSecondary"),
+  inkCodeOutput: document.getElementById("inkCodeOutput"),
+  copyInkCodeButtonSecondary: document.getElementById("copyInkCodeButtonSecondary"),
+  pairJsonOutput: document.getElementById("pairJsonOutput"),
+  applyPairJsonButton: document.getElementById("applyPairJsonButton"),
+  downloadPairButton: document.getElementById("downloadPairButton"),
+  importPairButton: document.getElementById("importPairButton"),
+  copyPairJsonButtonSecondary: document.getElementById("copyPairJsonButtonSecondary"),
+  pairImportInput: document.getElementById("pairImportInput"),
   statusText: document.getElementById("statusText")
 };
 
@@ -342,6 +258,20 @@ function slugifyId(value) {
     ? value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
     : "";
   return normalized || "custom-ink";
+}
+
+function ensureUniqueId(baseId, existingIds, currentId = null) {
+  if (!existingIds.has(baseId) || baseId === currentId) {
+    return baseId;
+  }
+
+  let index = 2;
+  let candidate = `${baseId}-${index}`;
+  while (existingIds.has(candidate) && candidate !== currentId) {
+    index += 1;
+    candidate = `${baseId}-${index}`;
+  }
+  return candidate;
 }
 
 function getPathValue(object, path) {
@@ -573,72 +503,301 @@ function setStatus(message, tone = "info", sticky = false) {
   }
 }
 
-function loadDraftState() {
-  const chromeSeed = clone(mixerSeedById.get("chrome"));
+function createSeedWorkspace() {
+  const paletteOrder = paletteSeedPresets.map((palette) => palette.meta.id);
+  const paletteInkOrder = {};
+  const palettes = {};
+  const inks = {};
 
-  try {
-    const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
-    if (!raw) {
-      return {
-        seedId: "chrome",
-        seedRecipe: chromeSeed,
-        recipe: chromeSeed,
-        backgroundId: "paper",
-        idTouched: false
-      };
+  paletteSeedPresets.forEach((palette) => {
+    palettes[palette.meta.id] = clone(palette);
+    paletteInkOrder[palette.meta.id] = [];
+  });
+
+  inkSeedPresets.forEach((ink) => {
+    inks[ink.meta.id] = clone(ink);
+    const collection = paletteInkOrder[ink.meta.paletteId] || [];
+    collection.push(ink.meta.id);
+    paletteInkOrder[ink.meta.paletteId] = collection;
+  });
+
+  return {
+    schemaVersion: 2,
+    selectedPaletteId: "rainbowChrome",
+    selectedInkId: "chrome",
+    paletteOrder,
+    paletteInkOrder,
+    palettes,
+    inks,
+    backgroundId: "paper",
+    layerMode: "combined",
+    isPlaying: true,
+    scrubMs: 900,
+    idTouched: {
+      palettes: {},
+      inks: {}
     }
+  };
+}
 
-    const parsed = JSON.parse(raw);
-    const seedId = typeof parsed.seedId === "string" ? parsed.seedId : "chrome";
-    const seedRecipe = seedId !== "__custom" && mixerSeedById.has(seedId)
-      ? clone(mixerSeedById.get(seedId))
-      : normalizePresetRecipe(parsed.seedRecipe || parsed.recipe);
+function getWorkspaceInkIds(workspace, paletteId) {
+  const ordered = Array.isArray(workspace.paletteInkOrder?.[paletteId])
+    ? workspace.paletteInkOrder[paletteId]
+    : [];
+  const seen = new Set();
+  const result = [];
 
-    return {
-      seedId,
-      seedRecipe,
-      recipe: normalizePresetRecipe(parsed.recipe || seedRecipe),
-      backgroundId: backgroundById.has(parsed.backgroundId) ? parsed.backgroundId : "paper",
-      idTouched: Boolean(parsed.idTouched)
-    };
-  } catch {
-    return {
-      seedId: "chrome",
-      seedRecipe: chromeSeed,
-      recipe: chromeSeed,
-      backgroundId: "paper",
-      idTouched: false
-    };
+  ordered.forEach((inkId) => {
+    const ink = workspace.inks[inkId];
+    if (ink && ink.meta.paletteId === paletteId && !seen.has(inkId)) {
+      seen.add(inkId);
+      result.push(inkId);
+    }
+  });
+
+  Object.values(workspace.inks).forEach((ink) => {
+    if (ink.meta.paletteId === paletteId && !seen.has(ink.meta.id)) {
+      seen.add(ink.meta.id);
+      result.push(ink.meta.id);
+    }
+  });
+
+  return result;
+}
+
+function normalizeWorkspaceState(raw) {
+  const workspace = createSeedWorkspace();
+  const source = raw && typeof raw === "object" ? raw : {};
+  const rawPalettes = source.palettes && typeof source.palettes === "object" ? source.palettes : {};
+  const rawInks = source.inks && typeof source.inks === "object" ? source.inks : {};
+
+  Object.values(rawPalettes).forEach((palette) => {
+    const normalized = normalizePaletteDefinition(palette);
+    workspace.palettes[normalized.meta.id] = normalized;
+    if (!workspace.paletteOrder.includes(normalized.meta.id)) {
+      workspace.paletteOrder.push(normalized.meta.id);
+    }
+    workspace.paletteInkOrder[normalized.meta.id] = workspace.paletteInkOrder[normalized.meta.id] || [];
+  });
+
+  Object.values(rawInks).forEach((ink) => {
+    const normalized = normalizeInkDefinition(ink);
+    workspace.inks[normalized.meta.id] = normalized;
+    if (!workspace.palettes[normalized.meta.paletteId]) {
+      workspace.palettes[normalized.meta.paletteId] = normalizePaletteDefinition({
+        meta: {
+          id: normalized.meta.paletteId,
+          label: normalized.meta.paletteId,
+          note: "Recovered custom palette."
+        }
+      });
+      workspace.paletteOrder.push(normalized.meta.paletteId);
+    }
+    workspace.paletteInkOrder[normalized.meta.paletteId] = workspace.paletteInkOrder[normalized.meta.paletteId] || [];
+  });
+
+  if (Array.isArray(source.paletteOrder)) {
+    const seen = new Set();
+    workspace.paletteOrder = source.paletteOrder.filter((paletteId) => {
+      if (!workspace.palettes[paletteId] || seen.has(paletteId)) {
+        return false;
+      }
+      seen.add(paletteId);
+      return true;
+    });
+
+    Object.keys(workspace.palettes).forEach((paletteId) => {
+      if (!seen.has(paletteId)) {
+        workspace.paletteOrder.push(paletteId);
+      }
+    });
+  }
+
+  const savedPaletteInkOrder = source.paletteInkOrder && typeof source.paletteInkOrder === "object"
+    ? source.paletteInkOrder
+    : {};
+  workspace.paletteOrder.forEach((paletteId) => {
+    const ordered = Array.isArray(savedPaletteInkOrder[paletteId]) ? savedPaletteInkOrder[paletteId] : [];
+    const seen = new Set();
+    const result = [];
+
+    ordered.forEach((inkId) => {
+      const ink = workspace.inks[inkId];
+      if (ink && ink.meta.paletteId === paletteId && !seen.has(inkId)) {
+        seen.add(inkId);
+        result.push(inkId);
+      }
+    });
+
+    Object.values(workspace.inks).forEach((ink) => {
+      if (ink.meta.paletteId === paletteId && !seen.has(ink.meta.id)) {
+        seen.add(ink.meta.id);
+        result.push(ink.meta.id);
+      }
+    });
+
+    workspace.paletteInkOrder[paletteId] = result;
+  });
+
+  workspace.selectedPaletteId = workspace.palettes[source.selectedPaletteId]
+    ? source.selectedPaletteId
+    : workspace.paletteOrder[0];
+
+  const selectedInkCandidates = getWorkspaceInkIds(workspace, workspace.selectedPaletteId);
+  workspace.selectedInkId = selectedInkCandidates.includes(source.selectedInkId)
+    ? source.selectedInkId
+    : selectedInkCandidates[0];
+
+  workspace.backgroundId = backgroundById.has(source.backgroundId) ? source.backgroundId : "paper";
+  workspace.layerMode = source.layerMode === "pigment" || source.layerMode === "sparkles" ? source.layerMode : "combined";
+  workspace.isPlaying = typeof source.isPlaying === "boolean" ? source.isPlaying : true;
+  workspace.scrubMs = clamp(Number.parseFloat(source.scrubMs) || 900, 0, LOOP_DURATION);
+  workspace.idTouched = {
+    palettes: source.idTouched?.palettes && typeof source.idTouched.palettes === "object" ? source.idTouched.palettes : {},
+    inks: source.idTouched?.inks && typeof source.idTouched.inks === "object" ? source.idTouched.inks : {}
+  };
+
+  return workspace;
+}
+
+function addPairToWorkspace(target, pair, { select = true } = {}) {
+  const palette = normalizePaletteDefinition(pair.palette);
+  const ink = normalizeInkDefinition({
+    ...pair.ink,
+    meta: {
+      ...(pair.ink?.meta || {}),
+      paletteId: palette.meta.id
+    }
+  });
+
+  target.palettes[palette.meta.id] = palette;
+  target.inks[ink.meta.id] = ink;
+
+  if (!target.paletteOrder.includes(palette.meta.id)) {
+    target.paletteOrder.push(palette.meta.id);
+  }
+
+  const order = target.paletteInkOrder[palette.meta.id] || [];
+  if (!order.includes(ink.meta.id)) {
+    order.push(ink.meta.id);
+  }
+  target.paletteInkOrder[palette.meta.id] = order;
+
+  if (select) {
+    target.selectedPaletteId = palette.meta.id;
+    target.selectedInkId = ink.meta.id;
   }
 }
 
+function makeCustomPair(pair, workspace) {
+  const paletteId = ensureUniqueId(
+    `custom-${slugifyId(pair.palette.meta.id || "palette")}`,
+    new Set(Object.keys(workspace.palettes))
+  );
+  const inkId = ensureUniqueId(
+    `custom-${slugifyId(pair.ink.meta.id || "ink")}`,
+    new Set(Object.keys(workspace.inks))
+  );
+
+  return {
+    palette: normalizePaletteDefinition({
+      ...pair.palette,
+      meta: {
+        ...(pair.palette.meta || {}),
+        id: paletteId,
+        label: pair.palette.meta?.label || "Custom Palette"
+      }
+    }),
+    ink: normalizeInkDefinition({
+      ...pair.ink,
+      meta: {
+        ...(pair.ink.meta || {}),
+        id: inkId,
+        paletteId,
+        label: pair.ink.meta?.label || "Custom Ink"
+      }
+    })
+  };
+}
+
+function loadWorkspaceState() {
+  try {
+    const raw = localStorage.getItem(WORKSPACE_STORAGE_KEY);
+    if (raw) {
+      return normalizeWorkspaceState(JSON.parse(raw));
+    }
+  } catch {
+    // Ignore broken saved workspace and fall through to migration/default.
+  }
+
+  try {
+    const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const sourceRecipe = parsed.recipe || parsed.seedRecipe;
+      if (sourceRecipe) {
+        const workspace = createSeedWorkspace();
+        const customPair = makeCustomPair(upgradeLegacyRecipeToPaletteInk(sourceRecipe), workspace);
+        addPairToWorkspace(workspace, customPair, { select: true });
+        workspace.backgroundId = backgroundById.has(parsed.backgroundId) ? parsed.backgroundId : "paper";
+        workspace.idTouched.inks[customPair.ink.meta.id] = Boolean(parsed.idTouched);
+        return workspace;
+      }
+    }
+  } catch {
+    // Ignore broken legacy draft and fall through to default.
+  }
+
+  return createSeedWorkspace();
+}
+
 const state = {
-  ...loadDraftState(),
-  layerMode: "combined",
+  ...loadWorkspaceState(),
   previewPreset: null,
-  isPlaying: true,
-  scrubMs: 900,
-  playOrigin: performance.now() - 900
+  playOrigin: performance.now()
 };
+state.playOrigin -= state.scrubMs;
+
+function getCurrentPalette() {
+  return state.palettes[state.selectedPaletteId];
+}
+
+function getCurrentInk() {
+  return state.inks[state.selectedInkId];
+}
+
+function getInkIdsForCurrentPalette() {
+  return getWorkspaceInkIds(state, state.selectedPaletteId);
+}
 
 function compilePreviewPreset() {
-  state.previewPreset = fromPreset(state.recipe);
+  state.previewPreset = fromPaletteInk({
+    palette: getCurrentPalette(),
+    ink: getCurrentInk()
+  });
   inkById.set(DESIGNER_PREVIEW_ID, state.previewPreset);
 }
 
-function persistDraft() {
+function persistWorkspace() {
   window.clearTimeout(persistTimer);
   persistTimer = window.setTimeout(() => {
     try {
-      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
-        seedId: state.seedId,
-        seedRecipe: state.seedRecipe,
-        recipe: state.recipe,
+      localStorage.setItem(WORKSPACE_STORAGE_KEY, JSON.stringify({
+        schemaVersion: 2,
+        selectedPaletteId: state.selectedPaletteId,
+        selectedInkId: state.selectedInkId,
+        paletteOrder: state.paletteOrder,
+        paletteInkOrder: state.paletteInkOrder,
+        palettes: state.palettes,
+        inks: state.inks,
         backgroundId: state.backgroundId,
+        layerMode: state.layerMode,
+        isPlaying: state.isPlaying,
+        scrubMs: state.scrubMs,
         idTouched: state.idTouched
       }));
     } catch {
-      setStatus("Could not save the local mixer draft.", "error");
+      setStatus("Could not save the local mixer workspace.", "error");
     }
   }, 150);
 }
@@ -647,7 +806,141 @@ function getCurrentBackground() {
   return backgroundById.get(state.backgroundId) || backgroundById.get("paper");
 }
 
-function createNumericControl(container, definition) {
+function refreshWorkspace({ persist = false, rerender = true } = {}) {
+  compilePreviewPreset();
+
+  if (sandboxController) {
+    inkById.set(DESIGNER_PREVIEW_ID, state.previewPreset);
+    if (rerender) {
+      sandboxController.rerender();
+    }
+  }
+
+  syncUi();
+
+  if (persist) {
+    persistWorkspace();
+  }
+}
+
+function selectPalette(paletteId, { persist = true } = {}) {
+  if (!state.palettes[paletteId]) {
+    return;
+  }
+
+  state.selectedPaletteId = paletteId;
+  const inkIds = getWorkspaceInkIds(state, paletteId);
+  if (!inkIds.includes(state.selectedInkId)) {
+    state.selectedInkId = inkIds[0];
+  }
+  refreshWorkspace({ persist, rerender: true });
+}
+
+function selectInk(inkId, { persist = true } = {}) {
+  const inkIds = getInkIdsForCurrentPalette();
+  if (!inkIds.includes(inkId)) {
+    return;
+  }
+
+  state.selectedInkId = inkId;
+  refreshWorkspace({ persist, rerender: true });
+}
+
+function applyCurrentPalette(nextPalette, { persist = false } = {}) {
+  state.palettes[state.selectedPaletteId] = normalizePaletteDefinition({
+    ...nextPalette,
+    meta: {
+      ...(nextPalette.meta || {}),
+      id: state.selectedPaletteId
+    }
+  });
+  refreshWorkspace({ persist });
+}
+
+function applyCurrentInk(nextInk, { persist = false, previousId = state.selectedInkId } = {}) {
+  const currentPaletteId = state.selectedPaletteId;
+  const normalized = normalizeInkDefinition({
+    ...nextInk,
+    meta: {
+      ...(nextInk.meta || {}),
+      paletteId: currentPaletteId
+    }
+  });
+
+  const nextId = ensureUniqueId(normalized.meta.id, new Set(Object.keys(state.inks)), previousId);
+  normalized.meta.id = nextId;
+
+  state.inks[nextId] = normalized;
+  if (previousId !== nextId) {
+    delete state.inks[previousId];
+  }
+
+  const order = [...(state.paletteInkOrder[currentPaletteId] || [])];
+  const existingIndex = order.indexOf(previousId);
+  if (existingIndex >= 0) {
+    order[existingIndex] = nextId;
+  } else if (!order.includes(nextId)) {
+    order.push(nextId);
+  }
+  state.paletteInkOrder[currentPaletteId] = Array.from(new Set(order));
+
+  if (previousId !== nextId) {
+    if (state.idTouched.inks[previousId]) {
+      state.idTouched.inks[nextId] = state.idTouched.inks[previousId];
+    }
+    delete state.idTouched.inks[previousId];
+  }
+
+  state.selectedInkId = nextId;
+  refreshWorkspace({ persist });
+}
+
+function updatePaletteField(path, value) {
+  const draft = clone(getCurrentPalette());
+  setPathValue(draft, path, value);
+  applyCurrentPalette(draft, { persist: true });
+}
+
+function updateInkField(path, value) {
+  const currentInkId = state.selectedInkId;
+  const draft = clone(getCurrentInk());
+  setPathValue(draft, path, value);
+
+  if (path === "meta.label" && !state.idTouched.inks[currentInkId]) {
+    draft.meta.id = slugifyId(draft.meta.label);
+  }
+  if (path === "meta.id") {
+    state.idTouched.inks[currentInkId] = true;
+    draft.meta.id = slugifyId(draft.meta.id);
+  }
+
+  applyCurrentInk(draft, { persist: true, previousId: currentInkId });
+}
+
+function loadPairBundle(bundle, statusMessage, { persist = true, forceCustom = false } = {}) {
+  let pair = null;
+
+  if (bundle && typeof bundle === "object" && bundle.schemaVersion === 2 && bundle.palette && bundle.ink) {
+    pair = {
+      palette: normalizePaletteDefinition(bundle.palette),
+      ink: normalizeInkDefinition(bundle.ink)
+    };
+  } else {
+    pair = upgradeLegacyRecipeToPaletteInk(bundle);
+    forceCustom = true;
+  }
+
+  if (forceCustom) {
+    pair = makeCustomPair(pair, state);
+  }
+
+  addPairToWorkspace(state, pair, { select: true });
+  state.idTouched.inks[state.selectedInkId] = Boolean(forceCustom);
+  refreshWorkspace({ persist });
+  setStatus(statusMessage);
+}
+
+function createNumericControl(container, scope, definition) {
   const wrapper = document.createElement("div");
   wrapper.className = "slider-control";
 
@@ -687,7 +980,12 @@ function createNumericControl(container, definition) {
     if (!Number.isFinite(numeric)) {
       return;
     }
-    updateRecipeField(definition.path, numeric);
+
+    if (scope === "palette") {
+      updatePaletteField(definition.path, numeric);
+    } else {
+      updateInkField(definition.path, numeric);
+    }
   };
 
   range.addEventListener("input", (event) => applyValue(event.target.value));
@@ -697,11 +995,11 @@ function createNumericControl(container, definition) {
   wrapper.append(head, caption, inputs);
   container.appendChild(wrapper);
 
-  numericBindings.push({ definition, range, number, readout });
+  numericBindings.push({ scope, definition, range, number, readout });
 }
 
-function buildNumericControls(container, definitions) {
-  definitions.forEach((definition) => createNumericControl(container, definition));
+function buildNumericControls(container, scope, definitions) {
+  definitions.forEach((definition) => createNumericControl(container, scope, definition));
 }
 
 function buildPaletteCards() {
@@ -767,7 +1065,7 @@ function buildPaletteCards() {
         if (!Number.isFinite(numeric)) {
           return;
         }
-        updateRecipeField(definition.path, numeric);
+        updateInkField(definition.path, numeric);
       };
 
       range.addEventListener("input", (event) => applyValue(event.target.value));
@@ -776,7 +1074,7 @@ function buildPaletteCards() {
       miniInputs.append(range, number);
       miniGroup.append(miniHead, miniInputs);
       controls.appendChild(miniGroup);
-      numericBindings.push({ definition, range, number, readout: miniReadout });
+      numericBindings.push({ scope: "ink", definition, range, number, readout: miniReadout });
     });
 
     colorInput.addEventListener("input", (event) => {
@@ -785,13 +1083,13 @@ function buildPaletteCards() {
         return;
       }
 
-      const draft = clone(state.recipe);
+      const draft = clone(getCurrentInk());
       const stop = draft.body.paletteStops[index];
       const converted = rgbToHsl(rgb[0], rgb[1], rgb[2]);
-      stop.hueShift = hueShiftFromAbsolute(converted.h, draft.paletteMotion.hueBase);
+      stop.hueShift = hueShiftFromAbsolute(converted.h, draft.body.hueBase);
       stop.saturation = converted.s;
       stop.lightness = converted.l;
-      applyRecipe(draft, { persist: true });
+      applyCurrentInk(draft, { persist: true });
     });
 
     card.append(top, controls);
@@ -835,7 +1133,7 @@ function buildSparkleColorCards() {
     body.append(colorInput, mini);
 
     enabled.addEventListener("change", () => {
-      const draft = clone(state.recipe);
+      const draft = clone(getCurrentInk());
       const colors = [...draft.sparkle.baseColors];
       if (enabled.checked) {
         while (colors.length <= index) {
@@ -845,25 +1143,25 @@ function buildSparkleColorCards() {
         colors.splice(index, 1);
       }
       draft.sparkle.baseColors = colors;
-      applyRecipe(draft, { persist: true });
+      applyCurrentInk(draft, { persist: true });
     });
 
     colorInput.addEventListener("input", (event) => {
-      const draft = clone(state.recipe);
+      const draft = clone(getCurrentInk());
       while (draft.sparkle.baseColors.length <= index) {
         draft.sparkle.baseColors.push(draft.sparkle.baseColors[draft.sparkle.baseColors.length - 1] || "#ffffff");
       }
       draft.sparkle.baseColors[index] = event.target.value;
-      applyRecipe(draft, { persist: true });
+      applyCurrentInk(draft, { persist: true });
     });
 
     textInput.addEventListener("change", (event) => {
-      const draft = clone(state.recipe);
+      const draft = clone(getCurrentInk());
       while (draft.sparkle.baseColors.length <= index) {
         draft.sparkle.baseColors.push(draft.sparkle.baseColors[draft.sparkle.baseColors.length - 1] || "#ffffff");
       }
       draft.sparkle.baseColors[index] = event.target.value;
-      applyRecipe(draft, { persist: true });
+      applyCurrentInk(draft, { persist: true });
     });
 
     card.append(top, body);
@@ -886,27 +1184,6 @@ function buildToggleButtons(container, options, currentValue, onSelect) {
   });
 }
 
-function renderSeedOptions() {
-  const selected = state.seedId;
-  dom.seedSelect.textContent = "";
-
-  mixerSeedPresets.forEach((seed) => {
-    const option = document.createElement("option");
-    option.value = seed.meta.id;
-    option.textContent = seed.meta.label;
-    dom.seedSelect.appendChild(option);
-  });
-
-  if (selected === "__custom") {
-    const customOption = document.createElement("option");
-    customOption.value = "__custom";
-    customOption.textContent = "Custom Draft";
-    dom.seedSelect.appendChild(customOption);
-  }
-
-  dom.seedSelect.value = selected;
-}
-
 function buildBackgroundPicker() {
   const fragment = document.createDocumentFragment();
 
@@ -926,7 +1203,7 @@ function buildBackgroundPicker() {
         sandboxController.setExportBackground(background.id);
       }
       syncUi();
-      persistDraft();
+      persistWorkspace();
     });
     fragment.appendChild(button);
   });
@@ -935,24 +1212,20 @@ function buildBackgroundPicker() {
 }
 
 function buildUi() {
-  buildNumericControls(dom.bodyControls, BODY_CONTROL_DEFS);
-  buildNumericControls(dom.sparkleControls, SPARKLE_CONTROL_DEFS);
-  buildNumericControls(dom.motionControls, MOTION_CONTROL_DEFS);
-  buildNumericControls(dom.advancedBodyControls, ADVANCED_BODY_CONTROL_DEFS);
-  buildNumericControls(dom.advancedPaletteControls, ADVANCED_PALETTE_CONTROL_DEFS);
-  buildNumericControls(dom.advancedShineControls, ADVANCED_SHINE_CONTROL_DEFS);
-  buildNumericControls(dom.advancedRimControls, ADVANCED_RIM_CONTROL_DEFS);
-  buildNumericControls(dom.advancedSparkleControls, ADVANCED_SPARKLE_CONTROL_DEFS);
+  buildNumericControls(dom.paletteControls, "palette", PALETTE_CONTROL_DEFS);
+  buildNumericControls(dom.inkControls, "ink", INK_CONTROL_DEFS);
+  buildNumericControls(dom.paletteAdvancedControls, "palette", PALETTE_ADVANCED_CONTROL_DEFS);
+  buildNumericControls(dom.inkAdvancedControls, "ink", INK_ADVANCED_CONTROL_DEFS);
   buildPaletteCards();
   buildSparkleColorCards();
   buildBackgroundPicker();
 
-  buildToggleButtons(dom.blendModeButtons, blendModeOptions, state.recipe.finish.blendMode, (value) => {
-    updateRecipeField("finish.blendMode", value);
+  buildToggleButtons(dom.paletteBlendModeButtons, blendModeOptions, getCurrentPalette().finish.blendMode, (value) => {
+    updatePaletteField("finish.blendMode", value);
   });
 
-  buildToggleButtons(dom.glintStyleButtons, glintStyleOptions, state.recipe.finish.glintStyle, (value) => {
-    updateRecipeField("finish.glintStyle", value);
+  buildToggleButtons(dom.paletteGlintStyleButtons, glintStyleOptions, getCurrentPalette().finish.glintStyle, (value) => {
+    updatePaletteField("finish.glintStyle", value);
   });
 
   buildToggleButtons(dom.layerModeButtons, [
@@ -962,7 +1235,7 @@ function buildUi() {
   ], state.layerMode, (value) => {
     state.layerMode = value;
     syncUi();
-    persistDraft();
+    persistWorkspace();
   });
 
   buildToggleButtons(dom.sandboxModeButtons, [
@@ -973,13 +1246,12 @@ function buildUi() {
       sandboxController.setMode(value);
     }
   });
-
-  renderSeedOptions();
 }
 
 function syncNumericBindings() {
-  numericBindings.forEach(({ definition, range, number, readout }) => {
-    const value = getPathValue(state.recipe, definition.path);
+  numericBindings.forEach(({ scope, definition, range, number, readout }) => {
+    const source = scope === "palette" ? getCurrentPalette() : getCurrentInk();
+    const value = getPathValue(source, definition.path);
     const formatted = formatNumber(value);
     if (document.activeElement !== range) {
       range.value = formatted;
@@ -992,33 +1264,36 @@ function syncNumericBindings() {
 }
 
 function syncHeaderFields() {
-  if (document.activeElement !== dom.recipeLabel) {
-    dom.recipeLabel.value = state.recipe.meta.label;
+  const currentInk = getCurrentInk();
+  if (document.activeElement !== dom.inkLabel) {
+    dom.inkLabel.value = currentInk.meta.label;
   }
-  if (document.activeElement !== dom.recipeId) {
-    dom.recipeId.value = state.recipe.meta.id;
+  if (document.activeElement !== dom.inkId) {
+    dom.inkId.value = currentInk.meta.id;
   }
-  if (document.activeElement !== dom.recipeNote) {
-    dom.recipeNote.value = state.recipe.meta.note;
+  if (document.activeElement !== dom.inkNote) {
+    dom.inkNote.value = currentInk.meta.note;
   }
   if (document.activeElement !== dom.shadowColorInput) {
-    dom.shadowColorInput.value = state.recipe.shadow.color;
+    dom.shadowColorInput.value = currentInk.shadow.color;
   }
 }
 
 function syncPaletteCards() {
+  const currentInk = getCurrentInk();
   paletteBindings.forEach(({ index, colorInput }) => {
-    const stop = state.recipe.body.paletteStops[index];
-    const absoluteHue = state.recipe.paletteMotion.hueBase + stop.hueShift;
+    const stop = currentInk.body.paletteStops[index];
+    const absoluteHue = currentInk.body.hueBase + stop.hueShift;
     const rgb = hslToRgb(absoluteHue, stop.saturation, stop.lightness);
     colorInput.value = rgbToHex(rgb[0], rgb[1], rgb[2]);
   });
 }
 
 function syncSparkleColorCards() {
+  const currentInk = getCurrentInk();
   sparkleColorBindings.forEach(({ index, enabled, colorInput, textInput }) => {
-    const isActive = index < state.recipe.sparkle.baseColors.length;
-    const color = state.recipe.sparkle.baseColors[Math.min(index, state.recipe.sparkle.baseColors.length - 1)] || "#ffffff";
+    const isActive = index < currentInk.sparkle.baseColors.length;
+    const color = currentInk.sparkle.baseColors[Math.min(index, currentInk.sparkle.baseColors.length - 1)] || "#ffffff";
     enabled.checked = isActive;
     colorInput.disabled = !isActive;
     textInput.disabled = !isActive;
@@ -1041,10 +1316,56 @@ function syncBackgroundButtons() {
   });
 }
 
+function syncPaletteSelector() {
+  const activeElement = document.activeElement;
+  dom.paletteSelect.textContent = "";
+  state.paletteOrder.forEach((paletteId) => {
+    const palette = state.palettes[paletteId];
+    if (!palette) {
+      return;
+    }
+    const option = document.createElement("option");
+    option.value = paletteId;
+    option.textContent = palette.meta.label;
+    dom.paletteSelect.appendChild(option);
+  });
+  if (activeElement !== dom.paletteSelect) {
+    dom.paletteSelect.value = state.selectedPaletteId;
+  }
+}
+
+function syncInkSelector() {
+  const activeElement = document.activeElement;
+  const inkIds = getInkIdsForCurrentPalette();
+  dom.inkSelect.textContent = "";
+  inkIds.forEach((inkId) => {
+    const ink = state.inks[inkId];
+    const option = document.createElement("option");
+    option.value = inkId;
+    option.textContent = ink.meta.label;
+    dom.inkSelect.appendChild(option);
+  });
+  dom.inkSelect.disabled = inkIds.length <= 1;
+  dom.inkSelectHint.textContent = inkIds.length <= 1
+    ? "This palette currently has one ink."
+    : `${inkIds.length} inks in this palette.`;
+  if (activeElement !== dom.inkSelect) {
+    dom.inkSelect.value = state.selectedInkId;
+  }
+}
+
+function syncPaletteSummary() {
+  const palette = getCurrentPalette();
+  dom.paletteScopeText.textContent = palette.meta.note || "Tune the shared material behavior for this family.";
+}
+
 function syncOutputs() {
-  dom.codeOutput.value = generatePresetSnippet(state.recipe);
-  if (document.activeElement !== dom.recipeJsonOutput) {
-    dom.recipeJsonOutput.value = JSON.stringify(state.recipe, null, 2);
+  const currentPalette = getCurrentPalette();
+  const currentInk = getCurrentInk();
+  dom.paletteCodeOutput.value = generatePaletteSnippet(currentPalette);
+  dom.inkCodeOutput.value = generateInkSnippet(currentInk);
+  if (document.activeElement !== dom.pairJsonOutput) {
+    dom.pairJsonOutput.value = generatePairSnippet({ palette: currentPalette, ink: currentInk });
   }
 }
 
@@ -1059,6 +1380,11 @@ function syncAnimationControls() {
   dom.playPauseButton.textContent = state.isPlaying ? "Pause" : "Play";
 }
 
+function syncResetButtons() {
+  dom.resetPaletteButton.disabled = !paletteSeedById.has(state.selectedPaletteId);
+  dom.resetInkButton.disabled = !inkSeedById.has(state.selectedInkId);
+}
+
 function syncSandboxUi(sandboxState = sandboxController?.getState()) {
   if (!sandboxState) {
     return;
@@ -1071,7 +1397,9 @@ function syncSandboxUi(sandboxState = sandboxController?.getState()) {
 }
 
 function syncUi() {
-  renderSeedOptions();
+  syncPaletteSelector();
+  syncInkSelector();
+  syncPaletteSummary();
   syncHeaderFields();
   syncNumericBindings();
   syncPaletteCards();
@@ -1079,57 +1407,11 @@ function syncUi() {
   syncOutputs();
   syncAnimationControls();
   syncBackgroundButtons();
-  syncToggleButtons(dom.blendModeButtons, state.recipe.finish.blendMode);
-  syncToggleButtons(dom.glintStyleButtons, state.recipe.finish.glintStyle);
+  syncToggleButtons(dom.paletteBlendModeButtons, getCurrentPalette().finish.blendMode);
+  syncToggleButtons(dom.paletteGlintStyleButtons, getCurrentPalette().finish.glintStyle);
   syncToggleButtons(dom.layerModeButtons, state.layerMode);
   syncSandboxUi();
-}
-
-function updateRecipeField(path, value) {
-  const draft = clone(state.recipe);
-  setPathValue(draft, path, value);
-
-  if (path === "meta.label" && !state.idTouched) {
-    draft.meta.id = slugifyId(draft.meta.label);
-  }
-  if (path === "meta.id") {
-    state.idTouched = true;
-  }
-
-  applyRecipe(draft, { persist: true });
-}
-
-function applyRecipe(nextRecipe, { persist = false } = {}) {
-  state.recipe = normalizePresetRecipe(nextRecipe);
-  compilePreviewPreset();
-
-  if (sandboxController) {
-    inkById.set(DESIGNER_PREVIEW_ID, state.previewPreset);
-    sandboxController.rerender();
-  }
-
-  syncUi();
-
-  if (persist) {
-    persistDraft();
-  }
-}
-
-function loadSeed(seedId) {
-  const seedRecipe = clone(mixerSeedById.get(seedId) || mixerSeedById.get("chrome"));
-  state.seedId = seedId;
-  state.seedRecipe = clone(seedRecipe);
-  state.idTouched = false;
-  applyRecipe(seedRecipe, { persist: true });
-}
-
-function loadCustomRecipe(recipe, statusMessage = "Custom recipe loaded.") {
-  const normalized = normalizePresetRecipe(recipe);
-  state.seedId = "__custom";
-  state.seedRecipe = clone(normalized);
-  state.idTouched = true;
-  applyRecipe(normalized, { persist: true });
-  setStatus(statusMessage);
+  syncResetButtons();
 }
 
 function initializeSandbox() {
@@ -1435,49 +1717,68 @@ function renderFrame(now) {
 }
 
 function bindEvents() {
-  dom.seedSelect.addEventListener("change", (event) => {
-    const seedId = event.target.value;
-    if (seedId === "__custom") {
-      state.seedId = "__custom";
-      persistDraft();
-      syncUi();
+  dom.paletteSelect.addEventListener("change", (event) => selectPalette(event.target.value));
+  dom.inkSelect.addEventListener("change", (event) => selectInk(event.target.value));
+
+  dom.inkLabel.addEventListener("input", (event) => updateInkField("meta.label", event.target.value));
+  dom.inkId.addEventListener("change", (event) => updateInkField("meta.id", event.target.value));
+  dom.inkNote.addEventListener("input", (event) => updateInkField("meta.note", event.target.value));
+  dom.shadowColorInput.addEventListener("change", (event) => updateInkField("shadow.color", event.target.value));
+
+  dom.resetPaletteButton.addEventListener("click", () => {
+    const seed = paletteSeedById.get(state.selectedPaletteId);
+    if (!seed) {
+      setStatus("No built-in seed for this palette.", "error");
       return;
     }
-    loadSeed(seedId);
+    applyCurrentPalette(clone(seed), { persist: true });
+    setStatus("Palette reset to its seed.");
   });
 
-  dom.recipeLabel.addEventListener("input", (event) => updateRecipeField("meta.label", event.target.value));
-  dom.recipeId.addEventListener("input", (event) => updateRecipeField("meta.id", event.target.value));
-  dom.recipeNote.addEventListener("input", (event) => updateRecipeField("meta.note", event.target.value));
-  dom.shadowColorInput.addEventListener("change", (event) => updateRecipeField("shadow.color", event.target.value));
-
-  dom.resetSeedButton.addEventListener("click", () => {
-    state.idTouched = false;
-    applyRecipe(clone(state.seedRecipe), { persist: true });
-    setStatus("Reset to the current seed recipe.");
+  dom.resetInkButton.addEventListener("click", () => {
+    const seed = inkSeedById.get(state.selectedInkId);
+    if (!seed) {
+      setStatus("No built-in seed for this ink.", "error");
+      return;
+    }
+    state.idTouched.inks[state.selectedInkId] = false;
+    applyCurrentInk(clone(seed), { persist: true });
+    setStatus("Ink reset to its seed.");
   });
 
-  const copyCode = async () => {
+  const copyPaletteCode = async () => {
     try {
-      await copyText(dom.codeOutput.value);
-      setStatus("Preset code copied.");
+      await copyText(dom.paletteCodeOutput.value);
+      setStatus("Palette code copied.");
     } catch {
-      setStatus("Could not copy preset code.", "error");
+      setStatus("Could not copy palette code.", "error");
     }
   };
 
-  const copyRecipe = async () => {
+  const copyInkCode = async () => {
     try {
-      await copyText(JSON.stringify(state.recipe, null, 2));
-      setStatus("Recipe JSON copied.");
+      await copyText(dom.inkCodeOutput.value);
+      setStatus("Ink code copied.");
     } catch {
-      setStatus("Could not copy recipe JSON.", "error");
+      setStatus("Could not copy ink code.", "error");
     }
   };
 
-  dom.copyCodeButton.addEventListener("click", copyCode);
-  dom.copyCodeButtonSecondary.addEventListener("click", copyCode);
-  dom.copyRecipeButton.addEventListener("click", copyRecipe);
+  const copyPairJson = async () => {
+    try {
+      await copyText(dom.pairJsonOutput.value);
+      setStatus("Pair JSON copied.");
+    } catch {
+      setStatus("Could not copy pair JSON.", "error");
+    }
+  };
+
+  dom.copyPaletteCodeButton.addEventListener("click", copyPaletteCode);
+  dom.copyPaletteCodeButtonSecondary.addEventListener("click", copyPaletteCode);
+  dom.copyInkCodeButton.addEventListener("click", copyInkCode);
+  dom.copyInkCodeButtonSecondary.addEventListener("click", copyInkCode);
+  dom.copyPairJsonButton.addEventListener("click", copyPairJson);
+  dom.copyPairJsonButtonSecondary.addEventListener("click", copyPairJson);
 
   dom.playPauseButton.addEventListener("click", () => {
     if (state.isPlaying) {
@@ -1487,6 +1788,7 @@ function bindEvents() {
       state.playOrigin = performance.now() - state.scrubMs;
     }
     syncAnimationControls();
+    persistWorkspace();
   });
 
   const applyScrub = (nextValue) => {
@@ -1494,6 +1796,7 @@ function bindEvents() {
     state.scrubMs = numeric;
     state.isPlaying = false;
     syncAnimationControls();
+    persistWorkspace();
   };
 
   dom.timeScrubber.addEventListener("input", (event) => applyScrub(event.target.value));
@@ -1515,36 +1818,40 @@ function bindEvents() {
   dom.sandboxBrushSize.addEventListener("input", (event) => applySandboxBrushSize(event.target.value));
   dom.sandboxBrushInput.addEventListener("input", (event) => applySandboxBrushSize(event.target.value));
 
-  dom.applyJsonButton.addEventListener("click", () => {
+  dom.applyPairJsonButton.addEventListener("click", () => {
     try {
-      loadCustomRecipe(JSON.parse(dom.recipeJsonOutput.value), "Recipe JSON applied.");
+      loadPairBundle(JSON.parse(dom.pairJsonOutput.value), "Pair JSON applied.", { forceCustom: false });
     } catch {
-      setStatus("That JSON could not be parsed into a recipe.", "error", true);
+      setStatus("That JSON could not be parsed into a palette and ink pair.", "error", true);
     }
   });
 
-  dom.downloadRecipeButton.addEventListener("click", () => {
+  dom.downloadPairButton.addEventListener("click", () => {
     createDownload(
-      new Blob([JSON.stringify(state.recipe, null, 2)], { type: "application/json" }),
-      `sparkly-recipe-${Date.now()}.json`
+      new Blob([dom.pairJsonOutput.value], { type: "application/json" }),
+      `sparkly-pair-${Date.now()}.json`
     );
-    setStatus("Recipe JSON downloaded.");
+    setStatus("Pair JSON downloaded.");
   });
 
-  dom.importRecipeButton.addEventListener("click", () => dom.recipeImportInput.click());
-  dom.recipeImportInput.addEventListener("change", async (event) => {
+  dom.importPairButton.addEventListener("click", () => dom.pairImportInput.click());
+  dom.pairImportInput.addEventListener("change", async (event) => {
     const [file] = event.target.files || [];
     if (!file) {
       return;
     }
 
     try {
-      loadCustomRecipe(JSON.parse(await file.text()), "Imported recipe JSON.");
+      loadPairBundle(JSON.parse(await file.text()), "Imported palette and ink pair.", { forceCustom: false });
     } catch {
-      setStatus("That file could not be imported as recipe JSON.", "error", true);
+      setStatus("That file could not be imported as palette/ink JSON.", "error", true);
     } finally {
       event.target.value = "";
     }
+  });
+
+  window.addEventListener("resize", () => {
+    syncUi();
   });
 }
 

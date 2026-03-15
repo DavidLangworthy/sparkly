@@ -680,42 +680,40 @@
         <div>
           <p class="eyebrow">Sparkly Ink Mixer</p>
           <h1>Build the glitter algebra, then paint with it.</h1>
-          <p class="lede">A visual workbench for tuning body pigment, glints, and sparkle motion. Clone a seed preset, inspect the layers, draw with the live result, and copy a `fromPreset(...)` snippet back into the app.</p>
+          <p class="lede">A visual workbench for tuning a shared material palette and the individual ink sitting inside it. Inspect the pigment and glints, draw with the live result, and copy palette and ink code back into the app.</p>
         </div>
 
         <div class="hero-actions">
           <div class="field-card">
-            <label for="seedSelect">Starting Ink</label>
-            <select id="seedSelect"></select>
+            <label for="paletteSelect">Palette Family</label>
+            <select id="paletteSelect"></select>
+          </div>
+
+          <div class="field-card">
+            <label for="inkSelect">Ink</label>
+            <select id="inkSelect"></select>
+            <div id="inkSelectHint" class="slider-caption">Choose an ink inside the current family.</div>
           </div>
 
           <div class="button-row">
-            <button class="action-button" id="resetSeedButton" type="button">Reset To Seed</button>
-            <button class="action-button action-button--primary" id="copyCodeButton" type="button">Copy Preset Code</button>
-            <button class="action-button" id="copyRecipeButton" type="button">Copy Recipe JSON</button>
+            <button class="action-button" id="resetPaletteButton" type="button">Reset Palette</button>
+            <button class="action-button" id="resetInkButton" type="button">Reset Ink</button>
+            <button class="action-button action-button--primary" id="copyPaletteCodeButton" type="button">Copy Palette Code</button>
+            <button class="action-button" id="copyInkCodeButton" type="button">Copy Ink Code</button>
+            <button class="action-button" id="copyPairJsonButton" type="button">Copy Pair JSON</button>
           </div>
         </div>
       </div>
 
       <div class="hero-grid">
         <div class="field-card">
-          <label for="recipeLabel">Ink Name</label>
-          <input id="recipeLabel" type="text" spellcheck="false">
-        </div>
-
-        <div class="field-card">
-          <label for="recipeId">Preset Id</label>
-          <input id="recipeId" type="text" spellcheck="false">
-        </div>
-
-        <div class="field-card">
           <label>Preview Background</label>
           <div id="backgroundPicker" class="background-grid" role="list" aria-label="Preview background"></div>
         </div>
 
         <div class="meta-card">
-          <label for="recipeNote">Mood Note</label>
-          <textarea id="recipeNote" rows="4"></textarea>
+          <label>Model</label>
+          <div class="slider-caption">Globals stay hidden in code. Designers shape one shared palette and one ink identity at a time.</div>
         </div>
       </div>
     </section>
@@ -724,79 +722,68 @@
       <aside class="control-column">
         <section class="panel-card">
           <div class="section-heading">
-            <h2>Body</h2>
-            <p>Shape the foil body and the broad feel of the pigment.</p>
+            <h2>Palette</h2>
+            <p>Shared material behavior for this family: foil feel, sparkle crowd, motion, and glint shape.</p>
           </div>
-          <div id="bodyControls" class="control-stack"></div>
-          <div id="paletteGrid" class="palette-grid"></div>
-        </section>
-
-        <section class="panel-card">
-          <div class="section-heading">
-            <h2>Sparkles</h2>
-            <p>Control the crowd, size, drift, and sparkle palette.</p>
-          </div>
-          <div id="sparkleControls" class="control-stack"></div>
-          <div id="sparkleColorGrid" class="sparkle-color-grid"></div>
-        </section>
-
-        <section class="panel-card">
-          <div class="section-heading">
-            <h2>Motion</h2>
-            <p>Pick the glint family and the broad movement speed.</p>
+          <div class="field-card">
+            <label>Palette Scope</label>
+            <div id="paletteScopeText" class="slider-caption">Tune the shared material behavior for this family.</div>
           </div>
           <div class="field-card">
             <label>Blend Mode</label>
-            <div id="blendModeButtons" class="toggle-row" role="group" aria-label="Blend mode"></div>
+            <div id="paletteBlendModeButtons" class="toggle-row" role="group" aria-label="Blend mode"></div>
           </div>
           <div class="field-card">
             <label>Glint Style</label>
-            <div id="glintStyleButtons" class="toggle-row" role="group" aria-label="Glint style"></div>
+            <div id="paletteGlintStyleButtons" class="toggle-row" role="group" aria-label="Glint style"></div>
           </div>
-          <div id="motionControls" class="control-stack"></div>
+          <div id="paletteControls" class="control-stack"></div>
+        </section>
+
+        <section class="panel-card">
+          <div class="section-heading">
+            <h2>Ink</h2>
+            <p>The color identity that sits inside this family: body stops, shine, rim, and sparkle tinting.</p>
+          </div>
+          <div class="field-card">
+            <label for="inkLabel">Ink Name</label>
+            <input id="inkLabel" type="text" spellcheck="false">
+          </div>
+          <div class="field-card">
+            <label for="inkId">Ink Id</label>
+            <input id="inkId" type="text" spellcheck="false">
+          </div>
+          <div class="field-card">
+            <label for="inkNote">Mood Note</label>
+            <textarea id="inkNote" rows="4"></textarea>
+          </div>
+          <div id="inkControls" class="control-stack"></div>
+          <div id="paletteGrid" class="palette-grid"></div>
+          <div id="sparkleColorGrid" class="sparkle-color-grid"></div>
         </section>
 
         <details class="details-card" id="advancedCard">
-          <summary>Advanced Controls</summary>
+          <summary>Palette Advanced</summary>
           <div class="details-card__body">
             <section class="advanced-stack">
               <div class="section-heading">
-                <h3>Body Math</h3>
-                <p>Spray spread and exact opacity tuning.</p>
+                <h3>Shared Motion</h3>
+                <p>Exact math for the family’s body waves, shine motion, and sparkle timing.</p>
               </div>
-              <div id="advancedBodyControls" class="control-stack"></div>
+              <div id="paletteAdvancedControls" class="control-stack"></div>
             </section>
+          </div>
+        </details>
 
+        <details class="details-card">
+          <summary>Ink Advanced</summary>
+          <div class="details-card__body">
             <section class="advanced-stack">
               <div class="section-heading">
-                <h3>Palette Motion</h3>
-                <p>Drive the body hue with layered sine and cosine waves.</p>
+                <h3>Color Math</h3>
+                <p>Fine-tune shine, rim, sparkle hue behavior, and the shadow underneath the ink.</p>
               </div>
-              <div id="advancedPaletteControls" class="control-stack"></div>
-            </section>
-
-            <section class="advanced-stack">
-              <div class="section-heading">
-                <h3>Shine</h3>
-                <p>Control the warm high sheen laid over each stamp.</p>
-              </div>
-              <div id="advancedShineControls" class="control-stack"></div>
-            </section>
-
-            <section class="advanced-stack">
-              <div class="section-heading">
-                <h3>Rim</h3>
-                <p>Tune the cooler edge light that separates the body.</p>
-              </div>
-              <div id="advancedRimControls" class="control-stack"></div>
-            </section>
-
-            <section class="advanced-stack">
-              <div class="section-heading">
-                <h3>Sparkle Motion</h3>
-                <p>Dial the hue drift, hotspot behavior, and shimmer swing.</p>
-              </div>
-              <div id="advancedSparkleControls" class="control-stack"></div>
+              <div id="inkAdvancedControls" class="control-stack"></div>
             </section>
 
             <section class="advanced-stack">
@@ -931,25 +918,37 @@
       <aside class="output-column">
         <section class="output-panel">
           <div class="section-heading">
-            <h2>Preset Code</h2>
-            <p>Copy the compiled `fromPreset(...)` call back into [site/ink.js].</p>
+            <h2>Palette Code</h2>
+            <p>Copy the shared family behavior as a `definePalette(...)` block.</p>
           </div>
-          <textarea id="codeOutput" class="code-output" readonly spellcheck="false"></textarea>
+          <textarea id="paletteCodeOutput" class="code-output" readonly spellcheck="false"></textarea>
           <div class="button-row">
-            <button class="action-button action-button--primary" id="copyCodeButtonSecondary" type="button">Copy Preset Code</button>
+            <button class="action-button action-button--primary" id="copyPaletteCodeButtonSecondary" type="button">Copy Palette Code</button>
           </div>
         </section>
 
         <section class="output-panel">
           <div class="section-heading">
-            <h2>Recipe JSON</h2>
-            <p>Save the bounded recipe, paste a new one, or import a file.</p>
+            <h2>Ink Code</h2>
+            <p>Copy the selected ink identity as a `defineInk(...)` block.</p>
           </div>
-          <textarea id="recipeJsonOutput" class="json-output" spellcheck="false"></textarea>
+          <textarea id="inkCodeOutput" class="code-output" readonly spellcheck="false"></textarea>
           <div class="button-row">
-            <button class="action-button" id="applyJsonButton" type="button">Use JSON</button>
-            <button class="action-button" id="downloadRecipeButton" type="button">Download Recipe JSON</button>
-            <button class="action-button" id="importRecipeButton" type="button">Import Recipe JSON</button>
+            <button class="action-button" id="copyInkCodeButtonSecondary" type="button">Copy Ink Code</button>
+          </div>
+        </section>
+
+        <section class="output-panel">
+          <div class="section-heading">
+            <h2>Pair JSON</h2>
+            <p>Export, paste, or import one palette and one ink together as a v2 bundle.</p>
+          </div>
+          <textarea id="pairJsonOutput" class="json-output" spellcheck="false"></textarea>
+          <div class="button-row">
+            <button class="action-button" id="copyPairJsonButtonSecondary" type="button">Copy Pair JSON</button>
+            <button class="action-button" id="applyPairJsonButton" type="button">Use JSON</button>
+            <button class="action-button" id="downloadPairButton" type="button">Download Pair JSON</button>
+            <button class="action-button" id="importPairButton" type="button">Import Pair JSON</button>
           </div>
           <div id="statusText" class="status-text" aria-live="polite"></div>
         </section>
@@ -957,7 +956,7 @@
     </section>
   </main>
 
-  <input id="recipeImportInput" type="file" accept=".json,application/json" hidden>
+  <input id="pairImportInput" type="file" accept=".json,application/json" hidden>
 
   <script type="module" src="./mixer.js"></script>
 </body>
