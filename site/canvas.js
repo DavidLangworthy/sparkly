@@ -1014,6 +1014,11 @@ function createCanvasController({ elements, onUiChange = () => {} }) {
     notifyUiChange();
   }
 
+  function rerender() {
+    redrawPaint();
+    notifyUiChange();
+  }
+
   function animate(time) {
     fxCtx.globalCompositeOperation = "source-over";
     fxCtx.clearRect(0, 0, state.sceneWidth, state.sceneHeight);
@@ -1061,7 +1066,8 @@ function createCanvasController({ elements, onUiChange = () => {} }) {
     renderCombinedFrame,
     getExportBounds,
     waitForNextPaint,
-    applySceneSize
+    applySceneSize,
+    rerender
   };
 }
 
