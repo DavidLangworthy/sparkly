@@ -1,5 +1,5 @@
-// Keep this in scope so mixer-generated `fromPreset(...)` snippets can be pasted here.
-import { fromPreset } from "./from-preset.js";
+// Keep these in scope so mixer-generated snippets can be pasted here.
+import { definePalette, defineInk, fromPaletteInk } from "./glitter-algebra.js";
 
 const TAU = Math.PI * 2;
 const EXPORT_BACKGROUND = "#f6ecd8";
