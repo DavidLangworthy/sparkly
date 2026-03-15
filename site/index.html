@@ -723,7 +723,7 @@
   <input id="projectInput" type="file" accept=".shimmerink,.json,application/json" hidden>
 
   <script type="module">
-    import { inkPresets, inkById, backgroundOptions, backgroundById } from "./ink.js";
+    import { inkPresets, inkById, backgroundOptions } from "./ink.js";
     import { createCanvasController } from "./canvas.js";
     import { createExportController } from "./export.js";
 
@@ -837,11 +837,6 @@
       });
     }
 
-    function getExportBackground() {
-      const state = getState();
-      return backgroundById.get(state.exportBackgroundId) || backgroundById.get("paper");
-    }
-
     function updateModeButtons() {
       const state = getState();
       modeButtons.forEach((button) => {
@@ -897,37 +892,6 @@
       event.preventDefault();
 
       canvasController.applySceneSize(Number(canvasWidthInput.value), Number(canvasHeightInput.value));
-    }
-
-    async function exportPng() {
-      const state = getState();
-      if (state.exportingKind) {
-        return;
-      }
-
-      canvasController.setExportingKind("png");
-
-      try {
-        await canvasController.waitForNextPaint();
-        const background = getExportBackground();
-        const bounds = { x: 0, y: 0, width: state.sceneWidth, height: state.sceneHeight };
-        const sourceScaleX = paintCanvas.width / state.sceneWidth;
-        const sourceScaleY = paintCanvas.height / state.sceneHeight;
-        const exportCanvas = document.createElement("canvas");
-        exportCanvas.width = Math.max(1, Math.round(bounds.width * sourceScaleX));
-        exportCanvas.height = Math.max(1, Math.round(bounds.height * sourceScaleY));
-        const exportCtx = exportCanvas.getContext("2d");
-        canvasController.renderCombinedFrame(exportCtx, performance.now(), exportCanvas.width, exportCanvas.height, bounds, background);
-
-        const link = document.createElement("a");
-        link.download = getExportFilename("png");
-        link.href = exportCanvas.toDataURL("image/png");
-        link.click();
-      } catch (error) {
-        alert("PNG export failed.");
-      } finally {
-        canvasController.setExportingKind(null);
-      }
     }
 
     brushSizeInput.addEventListener("input", (event) => {
