@@ -571,7 +571,7 @@ function createCanvasController({ elements, onUiChange = () => {} }) {
       });
     });
 
-    const outerPad = 28;
+    const outerPad = 18;
     const x = clamp(Math.floor(minX - outerPad), 0, state.sceneWidth);
     const y = clamp(Math.floor(minY - outerPad), 0, state.sceneHeight);
     const right = clamp(Math.ceil(maxX + outerPad), 0, state.sceneWidth);

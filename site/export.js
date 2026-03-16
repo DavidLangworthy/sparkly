@@ -332,7 +332,7 @@ function getExportFilename(extension) {
   return `shimmer-ink-${Date.now()}.${extension}`;
 }
 
-function canShareGifFile(file) {
+function canShareFile(file) {
   return typeof navigator.share === "function"
     && typeof navigator.canShare === "function"
     && navigator.canShare({ files: [file] });
@@ -361,6 +361,29 @@ function createExportController({ canvas, paintCanvas }) {
     return JSON.stringify(canvas.serializeProjectModel(), null, 2);
   }
 
+  function createTrimmedExportCanvas(background) {
+    const state = canvas.getState();
+    const bounds = canvas.getExportBounds();
+    const sourceScaleX = paintCanvas.width / state.sceneWidth;
+    const sourceScaleY = paintCanvas.height / state.sceneHeight;
+    const exportCanvas = document.createElement("canvas");
+
+    exportCanvas.width = Math.max(1, Math.round(bounds.width * sourceScaleX));
+    exportCanvas.height = Math.max(1, Math.round(bounds.height * sourceScaleY));
+
+    const exportCtx = exportCanvas.getContext("2d");
+    canvas.renderCombinedFrame(
+      exportCtx,
+      performance.now(),
+      exportCanvas.width,
+      exportCanvas.height,
+      bounds,
+      background
+    );
+
+    return exportCanvas;
+  }
+
   function saveProject() {
     downloadBlob(
       new Blob([serializeProject()], { type: "application/json" }),
@@ -384,11 +407,13 @@ function createExportController({ canvas, paintCanvas }) {
   }
 
   async function buildGifBlob() {
-    const state = canvas.getState();
     const background = getExportBackground();
-    const bounds = { x: 0, y: 0, width: state.sceneWidth, height: state.sceneHeight };
-    const width = Math.max(1, state.sceneWidth);
-    const height = Math.max(1, state.sceneHeight);
+    const bounds = canvas.getExportBounds();
+    const state = canvas.getState();
+    const sourceScaleX = paintCanvas.width / state.sceneWidth;
+    const sourceScaleY = paintCanvas.height / state.sceneHeight;
+    const width = Math.max(1, Math.round(bounds.width * sourceScaleX));
+    const height = Math.max(1, Math.round(bounds.height * sourceScaleY));
     const captureCanvas = document.createElement("canvas");
     const captureCtx = captureCanvas.getContext("2d");
     const frameCount = 18;
@@ -451,11 +476,12 @@ function createExportController({ canvas, paintCanvas }) {
         ? new File([blob], filename, { type: "image/gif", lastModified: Date.now() })
         : null;
 
-      if (file && canShareGifFile(file)) {
+      if (file && canShareFile(file)) {
         try {
           await navigator.share({
             files: [file],
-            title: "Sparkly GIF"
+            title: "Glitter Paint",
+            text: "Animated glitter paint GIF"
           });
           return;
         } catch (error) {
@@ -484,14 +510,7 @@ function createExportController({ canvas, paintCanvas }) {
     try {
       await canvas.waitForNextPaint();
       const background = getExportBackground();
-      const bounds = { x: 0, y: 0, width: state.sceneWidth, height: state.sceneHeight };
-      const sourceScaleX = paintCanvas.width / state.sceneWidth;
-      const sourceScaleY = paintCanvas.height / state.sceneHeight;
-      const exportCanvas = document.createElement("canvas");
-      exportCanvas.width = Math.max(1, Math.round(bounds.width * sourceScaleX));
-      exportCanvas.height = Math.max(1, Math.round(bounds.height * sourceScaleY));
-      const exportCtx = exportCanvas.getContext("2d");
-      canvas.renderCombinedFrame(exportCtx, performance.now(), exportCanvas.width, exportCanvas.height, bounds, background);
+      const exportCanvas = createTrimmedExportCanvas(background);
 
       const link = document.createElement("a");
       link.download = getExportFilename("png");
