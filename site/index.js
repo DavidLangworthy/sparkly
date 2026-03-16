@@ -71,9 +71,10 @@ function registerParameterizedInks() {
     });
 
     inkById.set(runtimeId, runtimePreset);
+    const label = inkId === "og-rainbow" ? "Rainbow Chrome" : runtimePreset.label;
     return {
       id: runtimeId,
-      label: runtimePreset.label,
+      label,
       note: inkId === "og-rainbow"
         ? "A shifting chrome ribbon with prismatic sparkles and rotating color flips."
         : runtimePreset.note,
