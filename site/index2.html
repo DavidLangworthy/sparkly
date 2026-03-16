@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shimmer Ink Studio 2</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      --bg: #f5f5f3;
+      --bg-glow: #ffffff;
+      --ink: #191919;
+      --muted: #66635e;
+      --line: rgba(25, 25, 25, 0.1);
+      --panel: rgba(255, 255, 255, 0.88);
+      --panel-strong: rgba(255, 255, 255, 0.96);
+      --focus: #2f7cf6;
+      --shadow-lg: 0 24px 60px rgba(24, 28, 38, 0.1);
+      --shadow-sm: 0 10px 24px rgba(24, 28, 38, 0.08);
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    body {
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.92), transparent 34%),
+        radial-gradient(circle at 84% 10%, rgba(201, 224, 255, 0.3), transparent 28%),
+        linear-gradient(180deg, #fafaf8 0%, #f1f1ee 100%);
+      overflow: hidden;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--focus) 40%, white);
+      outline-offset: 2px;
+    }
+
+    .app-shell {
+      height: 100vh;
+      max-width: 1580px;
+      margin: 0 auto;
+      padding: 14px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 12px;
+    }
+
+    .top-panel,
+    .stage-panel {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: var(--panel);
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(18px);
+    }
+
+    .top-panel {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .masthead {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 14px;
+    }
+
+    .masthead h1 {
+      margin: 0;
+      font-size: clamp(1.02rem, 1.6vw, 1.36rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .masthead__tag {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(47, 124, 246, 0.08);
+      color: #1f5dc1;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .picker-board {
+      display: grid;
+      gap: 10px;
+    }
+
+    .picker-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .picker-row__meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px 12px;
+    }
+
+    .picker-row__label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #5d5a54;
+    }
+
+    .picker-row__hint {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .picker-track {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(136px, 1fr);
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: thin;
+    }
+
+    .ink-tile {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+      padding: 10px;
+      border-radius: 18px;
+      border: 1px solid rgba(25, 25, 25, 0.12);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(245, 245, 243, 0.92));
+      box-shadow: var(--shadow-sm);
+      text-align: left;
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .ink-tile:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(24, 28, 38, 0.1);
+    }
+
+    .ink-tile.is-active {
+      border-color: rgba(47, 124, 246, 0.42);
+      box-shadow:
+        0 0 0 3px rgba(47, 124, 246, 0.12),
+        0 16px 30px rgba(24, 28, 38, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .ink-tile__preview-wrap {
+      min-height: 58px;
+      padding: 6px 6px 2px;
+      border-radius: 14px;
+      border: 1px solid rgba(25, 25, 25, 0.08);
+      background:
+        linear-gradient(45deg, rgba(140, 140, 140, 0.08) 25%, transparent 25%, transparent 75%, rgba(140, 140, 140, 0.08) 75%),
+        linear-gradient(45deg, rgba(140, 140, 140, 0.08) 25%, transparent 25%, transparent 75%, rgba(140, 140, 140, 0.08) 75%),
+        rgba(255, 255, 255, 0.82);
+      background-position: 0 0, 8px 8px, 0 0;
+      background-size: 16px 16px;
+      overflow: hidden;
+    }
+
+    .ink-tile__preview {
+      width: 100%;
+      height: 48px;
+      display: block;
+    }
+
+    .ink-tile__name {
+      font-size: 0.84rem;
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: 0.01em;
+    }
+
+    .toolbar-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .group-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #6a665f;
+    }
+
+    .slider-card,
+    .segmented,
+    .actions,
+    .background-card,
+    .size-card {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 10px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .slider-card {
+      flex: 1 1 220px;
+      justify-content: space-between;
+      min-width: 220px;
+    }
+
+    .slider-label {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px 8px;
+      min-width: 108px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .slider-value {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .slider-card input[type="range"] {
+      width: min(24vw, 176px);
+      accent-color: #2f7cf6;
+    }
+
+    .segmented {
+      gap: 6px;
+    }
+
+    .segment-button,
+    .action-button {
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 700;
+      transition: background 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    .segment-button:hover,
+    .action-button:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .segment-button.is-active {
+      color: var(--ink);
+      border-color: rgba(25, 25, 25, 0.12);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(241, 246, 255, 0.88));
+    }
+
+    .background-card,
+    .size-card {
+      flex-wrap: wrap;
+    }
+
+    .background-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .background-chip {
+      position: relative;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 1px solid rgba(25, 25, 25, 0.14);
+      background: var(--bg-color, #ffffff);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78), 0 4px 10px rgba(24, 28, 38, 0.08);
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .background-chip:hover {
+      transform: translateY(-1px);
+    }
+
+    .background-chip.is-active {
+      border-color: rgba(47, 124, 246, 0.42);
+      box-shadow: 0 0 0 3px rgba(47, 124, 246, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.82);
+    }
+
+    .background-chip--transparent {
+      background:
+        linear-gradient(45deg, rgba(126, 112, 96, 0.18) 25%, transparent 25%, transparent 75%, rgba(126, 112, 96, 0.18) 75%),
+        linear-gradient(45deg, rgba(126, 112, 96, 0.18) 25%, transparent 25%, transparent 75%, rgba(126, 112, 96, 0.18) 75%);
+      background-position: 0 0, 8px 8px;
+      background-size: 16px 16px;
+      background-color: rgba(255, 255, 255, 0.72);
+    }
+
+    .background-chip--transparent::after {
+      content: "";
+      position: absolute;
+      inset: 7px;
+      border-radius: 999px;
+      border: 2px solid rgba(160, 51, 51, 0.55);
+      transform: rotate(-24deg);
+    }
+
+    .size-grid {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .size-field {
+      display: grid;
+      gap: 3px;
+      min-width: 72px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6a665f;
+    }
+
+    .size-field input {
+      width: 100%;
+      padding: 7px 9px;
+      border-radius: 10px;
+      border: 1px solid rgba(25, 25, 25, 0.1);
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--ink);
+    }
+
+    .size-apply {
+      padding-inline: 12px;
+    }
+
+    .actions {
+      margin-left: auto;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    .action-button {
+      color: var(--ink);
+      background: rgba(239, 243, 248, 0.84);
+      border-color: rgba(25, 25, 25, 0.08);
+    }
+
+    .action-button--primary {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(226, 238, 255, 0.92));
+    }
+
+    .action-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
+      transform: none;
+    }
+
+    .action-button.is-busy {
+      opacity: 1;
+      color: #12345e;
+      background: linear-gradient(120deg, rgba(255, 255, 255, 0.98), rgba(177, 218, 255, 0.96) 42%, rgba(212, 189, 255, 0.92));
+      box-shadow: 0 0 0 3px rgba(47, 124, 246, 0.12);
+    }
+
+    .action-button.is-busy::after {
+      content: "";
+      display: inline-block;
+      width: 0.82em;
+      height: 0.82em;
+      margin-left: 0.5em;
+      border-radius: 999px;
+      border: 2px solid rgba(18, 52, 94, 0.2);
+      border-top-color: rgba(18, 52, 94, 0.92);
+      animation: export-spin 0.7s linear infinite;
+      vertical-align: -0.1em;
+    }
+
+    .stage-panel {
+      min-height: 0;
+      padding: 14px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 10px;
+    }
+
+    .stage-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 14px;
+      padding: 0 2px;
+    }
+
+    .ink-readout {
+      display: grid;
+      gap: 3px;
+    }
+
+    .ink-readout strong {
+      font-size: 1rem;
+      letter-spacing: -0.01em;
+    }
+
+    .ink-readout span,
+    .stage-hint {
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.24;
+    }
+
+    .stage-viewport {
+      position: relative;
+      min-height: clamp(360px, 58vh, 860px);
+      overflow: auto;
+      border-radius: 24px;
+      border: 1px solid rgba(25, 25, 25, 0.08);
+      background:
+        radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.88), transparent 32%),
+        linear-gradient(180deg, rgba(250, 250, 248, 0.98), rgba(237, 237, 233, 0.98));
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .canvas-shell {
+      position: relative;
+      width: 0;
+      height: 0;
+      margin: 18px auto;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(25, 25, 25, 0.08);
+      background: #ffffff;
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.54),
+        inset 0 18px 36px rgba(255, 255, 255, 0.16);
+    }
+
+    .canvas-shell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(20, 20, 20, 0.04) 0, rgba(20, 20, 20, 0.04) 1px, transparent 1px, transparent 32px),
+        linear-gradient(rgba(20, 20, 20, 0.04) 0, rgba(20, 20, 20, 0.04) 1px, transparent 1px, transparent 32px);
+      opacity: 0.22;
+      mix-blend-mode: multiply;
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #paintCanvas {
+      pointer-events: none;
+    }
+
+    #fxCanvas {
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    @keyframes export-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 980px) {
+      body {
+        overflow: auto;
+      }
+
+      .app-shell {
+        height: auto;
+        min-height: 100vh;
+      }
+
+      .actions {
+        margin-left: 0;
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app-shell {
+        padding: 12px;
+      }
+
+      .top-panel,
+      .stage-panel {
+        border-radius: 22px;
+      }
+
+      .slider-card,
+      .segmented,
+      .background-card,
+      .size-card,
+      .actions {
+        width: 100%;
+      }
+
+      .slider-card {
+        align-items: stretch;
+        gap: 12px;
+      }
+
+      .slider-card input[type="range"] {
+        width: 100%;
+      }
+
+      .picker-track {
+        grid-auto-columns: minmax(128px, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <section class="top-panel">
+      <div class="masthead">
+        <h1>Shimmer Ink Studio</h1>
+        <span class="masthead__tag">Original + Parameterized</span>
+      </div>
+
+      <section class="picker-board" aria-label="Ink shelf">
+        <div class="picker-row">
+          <div class="picker-row__meta">
+            <span class="picker-row__label">Original Inks</span>
+            <span class="picker-row__hint">Hand-tuned presets from the first shelf.</span>
+          </div>
+          <div id="originalInkPicker" class="picker-track" role="list"></div>
+        </div>
+
+        <div class="picker-row">
+          <div class="picker-row__meta">
+            <span class="picker-row__label">Parameterized Inks</span>
+            <span class="picker-row__hint">Compiled from the palette + ink workbench model.</span>
+          </div>
+          <div id="parameterizedInkPicker" class="picker-track" role="list"></div>
+        </div>
+      </section>
+
+      <div class="toolbar-row">
+        <div class="slider-card">
+          <label class="slider-label" for="brushSize">
+            Brush Size
+            <span class="slider-value" id="brushValue">20 px</span>
+          </label>
+          <input id="brushSize" type="range" min="6" max="48" step="1" value="20" aria-label="Brush size">
+        </div>
+
+        <div class="segmented" role="group" aria-label="Drawing mode">
+          <button class="segment-button is-active" type="button" data-mode="brush" aria-pressed="true">Brush</button>
+          <button class="segment-button" type="button" data-mode="spray" aria-pressed="false">Spray</button>
+        </div>
+
+        <div class="background-card">
+          <span class="group-label">Background</span>
+          <div id="backgroundPicker" class="background-grid" role="list" aria-label="Export background"></div>
+        </div>
+
+        <form class="size-card" id="canvasSizeForm">
+          <span class="group-label">Canvas Size</span>
+          <div class="size-grid">
+            <label class="size-field" for="canvasWidthInput">
+              Width
+              <input id="canvasWidthInput" type="number" min="320" max="4096" step="10" inputmode="numeric" value="0">
+            </label>
+            <label class="size-field" for="canvasHeightInput">
+              Height
+              <input id="canvasHeightInput" type="number" min="320" max="4096" step="10" inputmode="numeric" value="0">
+            </label>
+            <button class="action-button size-apply" type="submit">Resize</button>
+          </div>
+        </form>
+
+        <div class="actions">
+          <button class="action-button" id="undoButton" type="button">Undo</button>
+          <button class="action-button" id="clearButton" type="button">Clear</button>
+          <button class="action-button" id="saveButton" type="button">Save Project</button>
+          <button class="action-button" id="openButton" type="button">Open Project</button>
+          <button class="action-button action-button--primary" id="shareButton" type="button" title="Share GIF. Downloads the GIF if native sharing is unavailable.">Share GIF</button>
+          <button class="action-button action-button--primary" id="exportButton" type="button">Export PNG</button>
+          <button class="action-button action-button--primary" id="gifButton" type="button">Export GIF</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="stage-panel">
+      <div class="stage-meta">
+        <div class="ink-readout">
+          <strong id="activeInkName">Rainbow Chrome</strong>
+          <span id="activeInkMeta">Parameterized ink.</span>
+        </div>
+        <div class="stage-hint">Draw with finger, pencil, mouse, or pointer. Pinch or hold Space to move the canvas.</div>
+      </div>
+
+      <div class="stage-viewport" id="stageViewport">
+        <div class="canvas-shell" id="canvasShell">
+          <canvas id="paintCanvas" aria-hidden="true"></canvas>
+          <canvas id="fxCanvas" aria-label="Drawing surface"></canvas>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <input id="projectInput" type="file" accept=".shimmerink,.json,application/json" hidden>
+
+  <script type="module" src="./index2.js"></script>
+</body>
+</html>
