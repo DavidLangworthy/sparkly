@@ -150,15 +150,16 @@
 
     .ink-tile {
       display: grid;
-      gap: 8px;
+      gap: 0;
       min-width: 0;
-      padding: 10px 12px 12px;
+      padding: 0;
       border-radius: 18px;
       border: 1px solid rgba(25, 25, 25, 0.12);
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(245, 245, 243, 0.92));
       box-shadow: var(--shadow-sm);
       text-align: left;
+      overflow: hidden;
       transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
     }
 
@@ -177,9 +178,8 @@
 
     .ink-tile__preview {
       width: 100%;
-      height: 58px;
+      height: 64px;
       display: block;
-      border-radius: 12px;
     }
 
     .ink-tile__name {
@@ -187,6 +187,7 @@
       font-weight: 700;
       line-height: 1.15;
       letter-spacing: 0.01em;
+      padding: 10px 12px 12px;
     }
 
     .toolbar-row {
@@ -577,8 +578,8 @@
         </div>
 
         <div class="segmented" role="group" aria-label="Drawing mode">
-          <button class="segment-button is-active" type="button" data-mode="brush" aria-pressed="true">Brush</button>
-          <button class="segment-button" type="button" data-mode="spray" aria-pressed="false">Spray</button>
+          <button class="segment-button" type="button" data-mode="brush" aria-pressed="false">Brush</button>
+          <button class="segment-button is-active" type="button" data-mode="spray" aria-pressed="true">Spray</button>
         </div>
 
         <div class="background-card">

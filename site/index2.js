@@ -132,9 +132,13 @@ function getState() {
 
 function drawInkStripePreview(canvas, preset) {
   const width = Math.max(canvas.clientWidth, 120);
-  const height = Math.max(canvas.clientHeight, 58);
+  const height = Math.max(canvas.clientHeight, 64);
   const dpr = Math.max(window.devicePixelRatio || 1, 1);
   const ctx = canvas.getContext("2d");
+  const hash01 = (value) => {
+    const sine = Math.sin(value * 127.1 + value * value * 0.037) * 43758.5453123;
+    return sine - Math.floor(sine);
+  };
 
   canvas.width = Math.round(width * dpr);
   canvas.height = Math.round(height * dpr);
@@ -142,30 +146,47 @@ function drawInkStripePreview(canvas, preset) {
   ctx.clearRect(0, 0, width, height);
   ctx.imageSmoothingEnabled = true;
 
-  const steps = 32;
+  const steps = 22;
   const seed = 27.35;
   const sparkles = [];
 
   for (let index = 0; index < steps; index += 1) {
     const ratio = steps === 1 ? 0 : index / (steps - 1);
-    const x = 10 + ratio * (width - 20);
-    const y = height * 0.52 + Math.sin(ratio * Math.PI * 1.18 + seed * 0.01) * height * 0.1;
-    const stamp = {
+    const x = -4 + ratio * (width + 8);
+    const y = height * 0.52 + Math.sin(ratio * Math.PI * 1.08 + seed * 0.01) * height * 0.08;
+    const burstRadius = 6.1 + Math.sin(ratio * Math.PI) * 1.8;
+    const burst = {
       x,
       y,
-      radius: 6.6 + Math.sin(ratio * Math.PI) * 2.4,
-      angle: Math.sin(ratio * Math.PI * 1.3) * 0.05,
-      pressure: 0.9,
+      radius: burstRadius,
+      angle: Math.sin(ratio * Math.PI * 1.2) * 0.04,
+      pressure: 0.92,
       travel: ratio * width,
       progress: ratio * 9.2,
       seed,
-      isSpray: false
+      isSpray: true
     };
 
-    preset.renderStamp(ctx, stamp, 0);
+    for (let dot = 0; dot < 10; dot += 1) {
+      const key = seed + index * 31.7 + dot * 9.1;
+      const theta = hash01(key) * Math.PI * 2;
+      const distance = Math.sqrt(hash01(key + 1.7)) * burstRadius * 1.6;
+      const stamp = {
+        x: burst.x + Math.cos(theta) * distance,
+        y: burst.y + Math.sin(theta) * distance,
+        radius: burstRadius * (0.22 + hash01(key + 2.4) * 0.2),
+        angle: burst.angle + (hash01(key + 3.9) - 0.5) * 0.6,
+        pressure: burst.pressure,
+        travel: burst.travel,
+        progress: burst.progress + dot * 0.07,
+        seed: burst.seed + dot * 0.01,
+        isSpray: true
+      };
+      preset.renderStamp(ctx, stamp, 0);
+    }
 
     if (index % 3 === 0) {
-      sparkles.push(createSparkleNode(stamp, preset, seed + index * 1.73));
+      sparkles.push(createSparkleNode(burst, preset, seed + index * 1.73));
     }
   }
 
@@ -338,7 +359,7 @@ buildInkPicker(originalInkPicker, originalEntries);
 buildInkPicker(parameterizedInkPicker, parameterizedEntries);
 buildBackgroundPicker();
 canvasController.setActiveInk(DEFAULT_PARAMETERIZED_INK_ID);
-canvasController.setMode("brush");
+canvasController.setMode("spray");
 canvasController.setExportBackground("transparent");
 canvasController.initialize();
 syncUi();
