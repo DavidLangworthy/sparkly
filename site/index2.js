@@ -15,26 +15,14 @@ import {
   inkSeedById
 } from "./glitter-algebra.js";
 
-const DEFAULT_PARAMETERIZED_INK_ID = "param-chrome";
+const DEFAULT_INK_ID = "param-og-rainbow";
 const exportLabels = {
   share: "Share GIF",
-  png: "Export PNG",
-  gif: "Export GIF"
+  png: "PNG",
+  gif: "GIF"
 };
 
-const originalInkOrder = [
-  "chrome",
-  "gold",
-  "silver",
-  "pearl",
-  "opal",
-  "rose",
-  "galaxy",
-  "ember"
-];
-
 const parameterizedInkSpecs = [
-  { inkId: "chrome", runtimeId: "param-chrome" },
   { inkId: "og-rainbow", runtimeId: "param-og-rainbow" },
   { inkId: "gold", runtimeId: "param-gold" },
   { inkId: "silver", runtimeId: "param-silver" },
@@ -45,8 +33,7 @@ const parameterizedInkSpecs = [
   { inkId: "ember", runtimeId: "param-ember" }
 ];
 
-const originalInkPicker = document.getElementById("originalInkPicker");
-const parameterizedInkPicker = document.getElementById("parameterizedInkPicker");
+const inkPicker = document.getElementById("inkPicker");
 const backgroundPicker = document.getElementById("backgroundPicker");
 const brushSizeInput = document.getElementById("brushSize");
 const brushValue = document.getElementById("brushValue");
@@ -64,6 +51,7 @@ const canvasHeightInput = document.getElementById("canvasHeightInput");
 const projectInput = document.getElementById("projectInput");
 const activeInkName = document.getElementById("activeInkName");
 const activeInkMeta = document.getElementById("activeInkMeta");
+const controlsPopover = document.getElementById("controlsPopover");
 const stageViewport = document.getElementById("stageViewport");
 const canvasShell = document.getElementById("canvasShell");
 const paintCanvas = document.getElementById("paintCanvas");
@@ -86,28 +74,16 @@ function registerParameterizedInks() {
 
     inkById.set(runtimeId, runtimePreset);
     return {
-      runtimeId,
+      id: runtimeId,
       label: runtimePreset.label,
       note: runtimePreset.note,
-      source: "Parameterized",
       preset: runtimePreset
     };
   });
 }
 
-const originalEntries = originalInkOrder
-  .map((inkId) => inkById.get(inkId))
-  .filter(Boolean)
-  .map((preset) => ({
-    runtimeId: preset.id,
-    label: preset.label,
-    note: preset.note,
-    source: "Original",
-    preset
-  }));
-
-const parameterizedEntries = registerParameterizedInks();
-const inkEntriesById = new Map([...originalEntries, ...parameterizedEntries].map((entry) => [entry.runtimeId, entry]));
+const inkEntries = registerParameterizedInks();
+const inkEntriesById = new Map(inkEntries.map((entry) => [entry.id, entry]));
 
 const canvasController = createCanvasController({
   elements: {
@@ -130,16 +106,26 @@ function getState() {
   return canvasController.getState();
 }
 
+function hash01(value) {
+  const sine = Math.sin(value * 127.1 + value * value * 0.037) * 43758.5453123;
+  return sine - Math.floor(sine);
+}
+
+function lerp(start, end, amount) {
+  return start + (end - start) * amount;
+}
+
 function drawInkStripePreview(canvas, preset) {
-  const width = Math.max(canvas.clientWidth, 120);
-  const height = Math.max(canvas.clientHeight, 78);
+  const width = Math.max(canvas.clientWidth, 148);
+  const height = Math.max(canvas.clientHeight, 76);
   const dpr = Math.max(window.devicePixelRatio || 1, 1);
   const ctx = canvas.getContext("2d");
-  const hash01 = (value) => {
-    const sine = Math.sin(value * 127.1 + value * value * 0.037) * 43758.5453123;
-    return sine - Math.floor(sine);
-  };
-  const lerp = (start, end, amount) => start + (end - start) * amount;
+  const previewBrushSize = 30;
+  const dotCount = Math.max(20, Math.min(38, Math.round(previewBrushSize * 0.96)));
+  const scatter = (preset.sprayScatter || 18) * (0.26 + previewBrushSize * 0.018);
+  const steps = 54;
+  const seed = 27.35;
+  const sparkles = [];
 
   canvas.width = Math.round(width * dpr);
   canvas.height = Math.round(height * dpr);
@@ -147,26 +133,19 @@ function drawInkStripePreview(canvas, preset) {
   ctx.clearRect(0, 0, width, height);
   ctx.imageSmoothingEnabled = true;
 
-  const previewBrushSize = 28;
-  const dotCount = Math.max(18, Math.min(36, Math.round(previewBrushSize * 0.92)));
-  const scatter = (preset.sprayScatter || 18) * (0.3 + previewBrushSize * 0.022);
-  const steps = 46;
-  const seed = 27.35;
-  const sparkles = [];
-
   for (let index = 0; index < steps; index += 1) {
     const ratio = steps === 1 ? 0 : index / (steps - 1);
-    const x = -8 + ratio * (width + 16);
-    const y = height * 0.52 + Math.sin(ratio * Math.PI * 1.08 + seed * 0.01) * height * 0.05;
-    const burstRadius = 8.2 + Math.sin(ratio * Math.PI) * 1.7;
+    const x = -12 + ratio * (width + 24);
+    const y = height * 0.52 + Math.sin(ratio * Math.PI * 1.04 + seed * 0.01) * height * 0.045;
+    const burstRadius = 8.8 + Math.sin(ratio * Math.PI) * 1.8;
     const burst = {
       x,
       y,
       radius: burstRadius,
       angle: Math.sin(ratio * Math.PI * 1.2) * 0.04,
-      pressure: 0.92,
-      travel: ratio * width * 0.72,
-      progress: ratio * 6.8,
+      pressure: 0.94,
+      travel: ratio * width * 0.62,
+      progress: ratio * 6.2,
       seed,
       isSpray: true
     };
@@ -178,18 +157,18 @@ function drawInkStripePreview(canvas, preset) {
       const stamp = {
         x: burst.x + Math.cos(theta) * distance,
         y: burst.y + Math.sin(theta) * distance,
-        radius: burstRadius * lerp(0.16, 0.34, hash01(key + 2.4)),
+        radius: burstRadius * lerp(0.16, 0.35, hash01(key + 2.4)),
         angle: burst.angle + (hash01(key + 3.9) - 0.5) * 0.6,
         pressure: burst.pressure,
         travel: burst.travel,
-        progress: burst.progress + dot * 0.07,
+        progress: burst.progress + dot * 0.055,
         seed: burst.seed + dot * 0.01,
         isSpray: true
       };
       preset.renderStamp(ctx, stamp, 0);
     }
 
-    if (index % 3 === 0) {
+    if (index % 4 === 0) {
       sparkles.push(createSparkleNode(burst, preset, seed + index * 1.73));
     }
   }
@@ -200,7 +179,7 @@ function drawInkStripePreview(canvas, preset) {
 }
 
 function redrawPickerPreviews() {
-  document.querySelectorAll(".ink-tile").forEach((button) => {
+  inkPicker.querySelectorAll(".ink-option").forEach((button) => {
     const canvas = button.querySelector("canvas");
     const preset = inkById.get(button.dataset.inkId);
     if (canvas && preset) {
@@ -209,25 +188,25 @@ function redrawPickerPreviews() {
   });
 }
 
-function buildInkPicker(container, entries) {
+function buildInkPicker() {
   const fragment = document.createDocumentFragment();
 
-  entries.forEach((entry) => {
+  inkEntries.forEach((entry) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "ink-tile";
+    button.className = "ink-option";
     button.setAttribute("role", "listitem");
-    button.dataset.inkId = entry.runtimeId;
-    button.setAttribute("aria-label", `${entry.source} ${entry.label}`);
+    button.dataset.inkId = entry.id;
+    button.setAttribute("aria-label", entry.label);
     button.innerHTML = `
-      <canvas class="ink-tile__preview" width="128" height="78" aria-hidden="true"></canvas>
-      <span class="ink-tile__name">${entry.label}</span>
+      <canvas class="ink-option__preview" width="148" height="76" aria-hidden="true"></canvas>
+      <span class="ink-option__label">${entry.label}</span>
     `;
-    button.addEventListener("click", () => canvasController.setActiveInk(entry.runtimeId));
+    button.addEventListener("click", () => canvasController.setActiveInk(entry.id));
     fragment.appendChild(button);
   });
 
-  container.appendChild(fragment);
+  inkPicker.appendChild(fragment);
 }
 
 function buildBackgroundPicker() {
@@ -252,7 +231,7 @@ function buildBackgroundPicker() {
 
 function updateInkButtons() {
   const state = getState();
-  document.querySelectorAll(".ink-tile").forEach((button) => {
+  inkPicker.querySelectorAll(".ink-option").forEach((button) => {
     button.classList.toggle("is-active", button.dataset.inkId === state.activeInkId);
   });
 }
@@ -263,9 +242,7 @@ function updateInkReadout() {
   const preset = inkById.get(state.activeInkId);
 
   activeInkName.textContent = entry ? entry.label : preset?.label || "Ink";
-  activeInkMeta.textContent = entry
-    ? `${entry.source} ink. ${entry.note}`
-    : preset?.note || "";
+  activeInkMeta.textContent = entry?.note || preset?.note || "";
 }
 
 function updateBackgroundButtons() {
@@ -306,9 +283,9 @@ function updateExportButtons() {
   shareButton.classList.toggle("is-busy", isSharingGif);
   exportButton.classList.toggle("is-busy", isPngExporting);
   gifButton.classList.toggle("is-busy", isGifExporting);
-  shareButton.textContent = isSharingGif ? "Preparing Share..." : exportLabels.share;
-  exportButton.textContent = isPngExporting ? "Rendering PNG..." : exportLabels.png;
-  gifButton.textContent = isGifExporting ? "Encoding GIF..." : exportLabels.gif;
+  shareButton.textContent = isSharingGif ? "Sharing..." : exportLabels.share;
+  exportButton.textContent = isPngExporting ? "PNG..." : exportLabels.png;
+  gifButton.textContent = isGifExporting ? "GIF..." : exportLabels.gif;
 }
 
 function updateBrushSizeReadout() {
@@ -339,6 +316,18 @@ window.addEventListener("resize", () => {
   previewResizeFrame = requestAnimationFrame(redrawPickerPreviews);
 });
 
+document.addEventListener("click", (event) => {
+  if (controlsPopover.open && !controlsPopover.contains(event.target)) {
+    controlsPopover.open = false;
+  }
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    controlsPopover.open = false;
+  }
+});
+
 brushSizeInput.addEventListener("input", (event) => {
   canvasController.setBrushSize(Number(event.target.value));
 });
@@ -359,10 +348,9 @@ gifButton.addEventListener("click", () => exportController.exportGif());
 canvasSizeForm.addEventListener("submit", handleCanvasSizeSubmit);
 projectInput.addEventListener("change", (event) => exportController.openProjectFile(event));
 
-buildInkPicker(originalInkPicker, originalEntries);
-buildInkPicker(parameterizedInkPicker, parameterizedEntries);
+buildInkPicker();
 buildBackgroundPicker();
-canvasController.setActiveInk(DEFAULT_PARAMETERIZED_INK_ID);
+canvasController.setActiveInk(DEFAULT_INK_ID);
 canvasController.setMode("spray");
 canvasController.setExportBackground("transparent");
 canvasController.initialize();
