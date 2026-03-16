@@ -17,6 +17,7 @@ import {
 
 const DEFAULT_INK_ID = "param-og-rainbow";
 const exportLabels = {
+  save: "Save",
   share: "Share"
 };
 
@@ -37,6 +38,7 @@ const brushSizeInput = document.getElementById("brushSize");
 const brushValue = document.getElementById("brushValue");
 const modeButtons = Array.from(document.querySelectorAll("[data-mode]"));
 const undoButton = document.getElementById("undoButton");
+const saveGifButton = document.getElementById("saveGifButton");
 const clearButton = document.getElementById("clearButton");
 const saveButton = document.getElementById("saveButton");
 const openButton = document.getElementById("openButton");
@@ -275,6 +277,7 @@ function updateActionButtons() {
   const isExporting = Boolean(state.exportingKind);
 
   undoButton.disabled = !hasCommittedStrokes;
+  saveGifButton.disabled = !hasAnything || isExporting;
   clearButton.disabled = !hasAnything;
   shareButton.disabled = !hasAnything || isExporting;
   saveButton.disabled = isExporting;
@@ -283,9 +286,12 @@ function updateActionButtons() {
 
 function updateExportButtons() {
   const state = getState();
+  const isSavingGif = state.exportingKind === "gif";
   const isSharingGif = state.exportingKind === "share-gif";
 
+  saveGifButton.classList.toggle("is-busy", isSavingGif);
   shareButton.classList.toggle("is-busy", isSharingGif);
+  saveGifButton.textContent = isSavingGif ? "Saving..." : exportLabels.save;
   shareButton.textContent = isSharingGif ? "Sharing..." : exportLabels.share;
 }
 
@@ -341,6 +347,7 @@ modeButtons.forEach((button) => {
 });
 
 undoButton.addEventListener("click", () => canvasController.undoLastStroke());
+saveGifButton.addEventListener("click", () => exportController.exportGif());
 clearButton.addEventListener("click", () => canvasController.clearAllStrokes());
 saveButton.addEventListener("click", () => exportController.saveProject());
 openButton.addEventListener("click", () => projectInput.click());
