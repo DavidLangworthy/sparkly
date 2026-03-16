@@ -17,9 +17,7 @@ import {
 
 const DEFAULT_INK_ID = "param-og-rainbow";
 const exportLabels = {
-  share: "Share GIF",
-  png: "PNG",
-  gif: "GIF"
+  share: "Share"
 };
 
 const parameterizedInkSpecs = [
@@ -43,8 +41,6 @@ const clearButton = document.getElementById("clearButton");
 const saveButton = document.getElementById("saveButton");
 const openButton = document.getElementById("openButton");
 const shareButton = document.getElementById("shareButton");
-const exportButton = document.getElementById("exportButton");
-const gifButton = document.getElementById("gifButton");
 const canvasSizeForm = document.getElementById("canvasSizeForm");
 const canvasWidthInput = document.getElementById("canvasWidthInput");
 const canvasHeightInput = document.getElementById("canvasHeightInput");
@@ -76,7 +72,9 @@ function registerParameterizedInks() {
     return {
       id: runtimeId,
       label: runtimePreset.label,
-      note: runtimePreset.note,
+      note: inkId === "og-rainbow"
+        ? "A shifting chrome ribbon with prismatic sparkles and rotating color flips."
+        : runtimePreset.note,
       preset: runtimePreset
     };
   });
@@ -252,6 +250,15 @@ function updateBackgroundButtons() {
   });
 }
 
+function updateCanvasPreviewBackground() {
+  const state = getState();
+  if (state.exportBackgroundId === "transparent") {
+    canvasShell.style.background = "#ffffff";
+    canvasShell.style.backgroundSize = "auto";
+    canvasShell.style.backgroundPosition = "0 0";
+  }
+}
+
 function updateModeButtons() {
   const state = getState();
   modeButtons.forEach((button) => {
@@ -270,22 +277,16 @@ function updateActionButtons() {
   undoButton.disabled = !hasCommittedStrokes;
   clearButton.disabled = !hasAnything;
   shareButton.disabled = !hasAnything || isExporting;
-  exportButton.disabled = !hasAnything || isExporting;
-  gifButton.disabled = !hasAnything || isExporting;
+  saveButton.disabled = isExporting;
+  openButton.disabled = isExporting;
 }
 
 function updateExportButtons() {
   const state = getState();
   const isSharingGif = state.exportingKind === "share-gif";
-  const isPngExporting = state.exportingKind === "png";
-  const isGifExporting = state.exportingKind === "gif";
 
   shareButton.classList.toggle("is-busy", isSharingGif);
-  exportButton.classList.toggle("is-busy", isPngExporting);
-  gifButton.classList.toggle("is-busy", isGifExporting);
   shareButton.textContent = isSharingGif ? "Sharing..." : exportLabels.share;
-  exportButton.textContent = isPngExporting ? "PNG..." : exportLabels.png;
-  gifButton.textContent = isGifExporting ? "GIF..." : exportLabels.gif;
 }
 
 function updateBrushSizeReadout() {
@@ -299,6 +300,7 @@ function syncUi() {
   updateInkButtons();
   updateInkReadout();
   updateBackgroundButtons();
+  updateCanvasPreviewBackground();
   updateModeButtons();
   updateExportButtons();
   updateActionButtons();
@@ -343,8 +345,6 @@ clearButton.addEventListener("click", () => canvasController.clearAllStrokes());
 saveButton.addEventListener("click", () => exportController.saveProject());
 openButton.addEventListener("click", () => projectInput.click());
 shareButton.addEventListener("click", () => exportController.shareGif());
-exportButton.addEventListener("click", () => exportController.exportPng());
-gifButton.addEventListener("click", () => exportController.exportGif());
 canvasSizeForm.addEventListener("submit", handleCanvasSizeSubmit);
 projectInput.addEventListener("change", (event) => exportController.openProjectFile(event));
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shimmer Ink Studio 2</title>
+  <title>Glitter Paint</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <style>
     :root {
@@ -307,20 +307,15 @@
     }
 
     .background-chip--transparent {
-      background:
-        linear-gradient(45deg, rgba(126, 112, 96, 0.18) 25%, transparent 25%, transparent 75%, rgba(126, 112, 96, 0.18) 75%),
-        linear-gradient(45deg, rgba(126, 112, 96, 0.18) 25%, transparent 25%, transparent 75%, rgba(126, 112, 96, 0.18) 75%);
-      background-position: 0 0, 8px 8px;
-      background-size: 16px 16px;
-      background-color: rgba(255, 255, 255, 0.72);
+      background: rgba(255, 255, 255, 0.96);
     }
 
     .background-chip--transparent::after {
       content: "";
       position: absolute;
-      inset: 7px;
+      inset: 6px;
       border-radius: 999px;
-      border: 2px solid rgba(160, 51, 51, 0.55);
+      border: 2px solid rgba(160, 51, 51, 0.45);
       transform: rotate(-24deg);
     }
 
@@ -509,22 +504,17 @@
   <main class="app-shell">
     <header class="header-bar">
       <div class="brand">
-        <h1>Shimmer Ink Studio</h1>
+        <h1>Glitter Paint</h1>
         <div class="brand-meta">
           <strong id="activeInkName">OG Rainbow</strong>
-          <span id="activeInkMeta">A broader old-school rainbow ribbon with blue-red-green body splits and stronger along-stripe color travel.</span>
+          <span id="activeInkMeta">A shifting chrome ribbon with prismatic sparkles and rotating color flips.</span>
         </div>
       </div>
 
       <div class="header-tools">
         <div class="action-strip">
           <button class="action-button" id="undoButton" type="button">Undo</button>
-          <button class="action-button" id="clearButton" type="button">Clear</button>
-          <button class="action-button" id="saveButton" type="button">Save</button>
-          <button class="action-button" id="openButton" type="button">Open</button>
-          <button class="action-button action-button--primary" id="shareButton" type="button" title="Share GIF. Downloads the GIF if native sharing is unavailable.">Share GIF</button>
-          <button class="action-button action-button--primary" id="exportButton" type="button">PNG</button>
-          <button class="action-button action-button--primary" id="gifButton" type="button">GIF</button>
+          <button class="action-button action-button--primary" id="shareButton" type="button" title="Share GIF. Downloads the GIF if native sharing is unavailable.">Share</button>
         </div>
 
         <details class="controls-popover" id="controlsPopover">
@@ -541,6 +531,12 @@
             <div class="segmented" role="group" aria-label="Drawing mode">
               <button class="segment-button" type="button" data-mode="brush" aria-pressed="false">Brush</button>
               <button class="segment-button is-active" type="button" data-mode="spray" aria-pressed="true">Spray</button>
+            </div>
+
+            <div class="segmented" role="group" aria-label="Project actions">
+              <button class="segment-button" id="clearButton" type="button">Clear</button>
+              <button class="segment-button" id="saveButton" type="button">Save</button>
+              <button class="segment-button" id="openButton" type="button">Open</button>
             </div>
 
             <div class="background-card">
