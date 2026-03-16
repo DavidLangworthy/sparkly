@@ -332,6 +332,10 @@ function getExportFilename(extension) {
   return `shimmer-ink-${Date.now()}.${extension}`;
 }
 
+function getShareFilename(extension) {
+  return `glitter-paint.${extension}`;
+}
+
 function canShareFile(file) {
   return typeof navigator.share === "function"
     && typeof navigator.canShare === "function"
@@ -470,7 +474,7 @@ function createExportController({ canvas, paintCanvas }) {
 
     try {
       await canvas.waitForNextPaint();
-      const filename = getExportFilename("gif");
+      const filename = getShareFilename("gif");
       const blob = await buildGifBlob();
       const file = typeof File === "function"
         ? new File([blob], filename, { type: "image/gif", lastModified: Date.now() })
@@ -478,11 +482,7 @@ function createExportController({ canvas, paintCanvas }) {
 
       if (file && canShareFile(file)) {
         try {
-          await navigator.share({
-            files: [file],
-            title: "Glitter Paint",
-            text: "Animated glitter paint GIF"
-          });
+          await navigator.share({ files: [file] });
           return;
         } catch (error) {
           if (isShareAbortError(error)) {
