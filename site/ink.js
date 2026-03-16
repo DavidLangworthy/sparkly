@@ -596,6 +596,7 @@ const inkById = new Map(inkPresets.map((preset) => [preset.id, preset]));
 
 const backgroundOptions = [
   { id: "transparent", label: "Transparent", color: null, className: "background-chip--transparent" },
+  { id: "white", label: "White", color: "#ffffff" },
   { id: "paper", label: "Paper", color: EXPORT_BACKGROUND },
   { id: "ivory", label: "Ivory", color: "#fff7ef" },
   { id: "blush", label: "Blush", color: "#f8e3e8" },
