@@ -199,9 +199,9 @@ function buildInkPicker() {
     button.setAttribute("role", "listitem");
     button.dataset.inkId = entry.id;
     button.setAttribute("aria-label", entry.label);
+    button.title = entry.label;
     button.innerHTML = `
       <canvas class="ink-option__preview" width="148" height="76" aria-hidden="true"></canvas>
-      <span class="ink-option__label">${entry.label}</span>
     `;
     button.addEventListener("click", () => canvasController.setActiveInk(entry.id));
     fragment.appendChild(button);
