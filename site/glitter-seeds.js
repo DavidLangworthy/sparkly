@@ -58,6 +58,63 @@ const paletteSeedDefinitions = [
   },
   {
     meta: {
+      id: "ogRainbowPrism",
+      label: "OG Rainbow Prism",
+      note: "A broader old-school rainbow ribbon with blue-red-green body splits and stronger along-stripe color travel."
+    },
+    finish: {
+      blendMode: "lighter",
+      glintStyle: "prism",
+      sheenSpeed: 1.28
+    },
+    bodyProfile: {
+      stretch: 1.24,
+      squeeze: 0.8,
+      sprayScatter: 22,
+      pigmentAlpha: 0.82,
+      highlightAlpha: 0.46,
+      edgeAlpha: 0.2
+    },
+    bodyMotion: {
+      sinProgressFreq: 0.74,
+      sinSeedFreq: 4.2,
+      sinAmplitude: 132,
+      cosProgressFreq: 0,
+      cosSeedFreq: 0,
+      cosAmplitude: 0
+    },
+    shineMotion: {
+      progressFreq: 0.82,
+      seedFreq: 4.8,
+      amplitude: 88
+    },
+    rimMotion: {
+      progressFreq: 0.82,
+      seedFreq: 4.8,
+      amplitude: 88
+    },
+    sparkleProfile: {
+      density: 0.07,
+      sizeMin: 1.8,
+      sizeMax: 5.6,
+      hueRange: 320,
+      brightnessMin: 0.55,
+      brightnessMax: 1.25,
+      driftMin: 0.18,
+      driftMax: 1.12,
+      hotspotChance: 0,
+      hotspotBoost: 1
+    },
+    sparkleMotion: {
+      hueOffsetScale: 1,
+      timeSinSpeed: 0.0013,
+      timeSinAmplitude: 96,
+      timeCosSpeed: 0.0006,
+      timeCosAmplitude: 14
+    }
+  },
+  {
+    meta: {
       id: "metallicFoil",
       label: "Metallic Foil",
       note: "Shared foil behavior for metallic inks with brighter hotspots and a sharper reflected edge."
@@ -382,6 +439,47 @@ const inkSeedDefinitions = [
       saturationAmplitude: 0,
       lightnessBase: 74,
       lightnessAmplitude: 8,
+      alpha: 0.95
+    }
+  },
+  {
+    meta: {
+      id: "og-rainbow",
+      paletteId: "ogRainbowPrism",
+      label: "OG Rainbow",
+      note: "Closer to the original handwritten rainbow stripe, but still built from the parameterized palette and ink model."
+    },
+    body: {
+      hueBase: 0,
+      paletteStops: [
+        { hueShift: -145, saturation: 74, lightness: 36, alpha: 0.92 },
+        { hueShift: 8, saturation: 94, lightness: 58, alpha: 0.9 },
+        { hueShift: 128, saturation: 82, lightness: 64, alpha: 0.84 },
+        { hueShift: 128, saturation: 82, lightness: 64, alpha: 0.84 }
+      ]
+    },
+    shine: {
+      hueBase: 42,
+      saturation: 100,
+      lightness: 88,
+      alpha: 0.88
+    },
+    rim: {
+      hueBase: 180,
+      saturation: 80,
+      lightness: 80,
+      alpha: 0.3
+    },
+    shadow: {
+      color: "hsla(228 56% 24% / 0.14)"
+    },
+    sparkle: {
+      baseColors: ["#ffffff", "rgba(255,160,221,0.92)", "rgba(114,239,245,0.92)"],
+      hueBase: 200,
+      saturationBase: 100,
+      saturationAmplitude: 0,
+      lightnessBase: 74,
+      lightnessAmplitude: 0,
       alpha: 0.95
     }
   },
