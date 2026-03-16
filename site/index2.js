@@ -147,17 +147,17 @@ function drawInkStripePreview(canvas, preset) {
   ctx.clearRect(0, 0, width, height);
   ctx.imageSmoothingEnabled = true;
 
-  const previewBrushSize = 26;
-  const dotCount = Math.max(12, Math.min(30, Math.round(previewBrushSize * 0.8)));
-  const scatter = (preset.sprayScatter || 18) * (0.42 + previewBrushSize * 0.032);
-  const steps = 30;
+  const previewBrushSize = 28;
+  const dotCount = Math.max(18, Math.min(36, Math.round(previewBrushSize * 0.92)));
+  const scatter = (preset.sprayScatter || 18) * (0.3 + previewBrushSize * 0.022);
+  const steps = 46;
   const seed = 27.35;
   const sparkles = [];
 
   for (let index = 0; index < steps; index += 1) {
     const ratio = steps === 1 ? 0 : index / (steps - 1);
-    const x = -10 + ratio * (width + 20);
-    const y = height * 0.52 + Math.sin(ratio * Math.PI * 1.12 + seed * 0.01) * height * 0.06;
+    const x = -8 + ratio * (width + 16);
+    const y = height * 0.52 + Math.sin(ratio * Math.PI * 1.08 + seed * 0.01) * height * 0.05;
     const burstRadius = 8.2 + Math.sin(ratio * Math.PI) * 1.7;
     const burst = {
       x,
@@ -165,8 +165,8 @@ function drawInkStripePreview(canvas, preset) {
       radius: burstRadius,
       angle: Math.sin(ratio * Math.PI * 1.2) * 0.04,
       pressure: 0.92,
-      travel: ratio * width,
-      progress: ratio * 9.2,
+      travel: ratio * width * 0.72,
+      progress: ratio * 6.8,
       seed,
       isSpray: true
     };
@@ -178,7 +178,7 @@ function drawInkStripePreview(canvas, preset) {
       const stamp = {
         x: burst.x + Math.cos(theta) * distance,
         y: burst.y + Math.sin(theta) * distance,
-        radius: burstRadius * lerp(0.14, 0.31, hash01(key + 2.4)),
+        radius: burstRadius * lerp(0.16, 0.34, hash01(key + 2.4)),
         angle: burst.angle + (hash01(key + 3.9) - 0.5) * 0.6,
         pressure: burst.pressure,
         travel: burst.travel,
