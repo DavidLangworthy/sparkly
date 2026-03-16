@@ -132,7 +132,7 @@ function getState() {
 
 function drawInkStripePreview(canvas, preset) {
   const width = Math.max(canvas.clientWidth, 120);
-  const height = Math.max(canvas.clientHeight, 48);
+  const height = Math.max(canvas.clientHeight, 58);
   const dpr = Math.max(window.devicePixelRatio || 1, 1);
   const ctx = canvas.getContext("2d");
 
@@ -142,22 +142,22 @@ function drawInkStripePreview(canvas, preset) {
   ctx.clearRect(0, 0, width, height);
   ctx.imageSmoothingEnabled = true;
 
-  const steps = 28;
+  const steps = 32;
   const seed = 27.35;
   const sparkles = [];
 
   for (let index = 0; index < steps; index += 1) {
     const ratio = steps === 1 ? 0 : index / (steps - 1);
-    const x = 12 + ratio * (width - 24);
-    const y = height * 0.58 + Math.sin(ratio * Math.PI * 1.3 + seed * 0.01) * height * 0.11;
+    const x = 10 + ratio * (width - 20);
+    const y = height * 0.52 + Math.sin(ratio * Math.PI * 1.18 + seed * 0.01) * height * 0.1;
     const stamp = {
       x,
       y,
-      radius: 5.2 + Math.sin(ratio * Math.PI) * 3.1,
-      angle: Math.sin(ratio * Math.PI * 1.6) * 0.08,
-      pressure: 0.82,
+      radius: 6.6 + Math.sin(ratio * Math.PI) * 2.4,
+      angle: Math.sin(ratio * Math.PI * 1.3) * 0.05,
+      pressure: 0.9,
       travel: ratio * width,
-      progress: ratio * 8.4,
+      progress: ratio * 9.2,
       seed,
       isSpray: false
     };
@@ -169,7 +169,7 @@ function drawInkStripePreview(canvas, preset) {
     }
   }
 
-  sparkles.slice(0, 10).forEach((node, index) => {
+  sparkles.slice(0, 6).forEach((node, index) => {
     preset.renderGlint(ctx, node, 1100 + index * 37);
   });
 }
@@ -195,9 +195,7 @@ function buildInkPicker(container, entries) {
     button.dataset.inkId = entry.runtimeId;
     button.setAttribute("aria-label", `${entry.source} ${entry.label}`);
     button.innerHTML = `
-      <span class="ink-tile__preview-wrap">
-        <canvas class="ink-tile__preview" width="128" height="48" aria-hidden="true"></canvas>
-      </span>
+      <canvas class="ink-tile__preview" width="128" height="58" aria-hidden="true"></canvas>
       <span class="ink-tile__name">${entry.label}</span>
     `;
     button.addEventListener("click", () => canvasController.setActiveInk(entry.runtimeId));
@@ -340,6 +338,7 @@ buildInkPicker(originalInkPicker, originalEntries);
 buildInkPicker(parameterizedInkPicker, parameterizedEntries);
 buildBackgroundPicker();
 canvasController.setActiveInk(DEFAULT_PARAMETERIZED_INK_ID);
+canvasController.setMode("brush");
 canvasController.setExportBackground("transparent");
 canvasController.initialize();
 syncUi();

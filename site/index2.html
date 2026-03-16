@@ -152,7 +152,7 @@
       display: grid;
       gap: 8px;
       min-width: 0;
-      padding: 10px;
+      padding: 10px 12px 12px;
       border-radius: 18px;
       border: 1px solid rgba(25, 25, 25, 0.12);
       background:
@@ -175,24 +175,11 @@
       transform: translateY(-2px);
     }
 
-    .ink-tile__preview-wrap {
-      min-height: 58px;
-      padding: 6px 6px 2px;
-      border-radius: 14px;
-      border: 1px solid rgba(25, 25, 25, 0.08);
-      background:
-        linear-gradient(45deg, rgba(140, 140, 140, 0.08) 25%, transparent 25%, transparent 75%, rgba(140, 140, 140, 0.08) 75%),
-        linear-gradient(45deg, rgba(140, 140, 140, 0.08) 25%, transparent 25%, transparent 75%, rgba(140, 140, 140, 0.08) 75%),
-        rgba(255, 255, 255, 0.82);
-      background-position: 0 0, 8px 8px, 0 0;
-      background-size: 16px 16px;
-      overflow: hidden;
-    }
-
     .ink-tile__preview {
       width: 100%;
-      height: 48px;
+      height: 58px;
       display: block;
+      border-radius: 12px;
     }
 
     .ink-tile__name {
@@ -482,7 +469,7 @@
       mix-blend-mode: multiply;
     }
 
-    canvas {
+    .canvas-shell > canvas {
       position: absolute;
       inset: 0;
       width: 100%;
