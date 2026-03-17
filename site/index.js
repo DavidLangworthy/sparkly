@@ -1,12 +1,21 @@
 import { inkById, backgroundOptions } from "./ink.js";
-import { createViewportCanvasController } from "./viewport-canvas.js";
-import { createViewportExportController } from "./viewport-export.js";
+import { createCanvasController } from "./canvas.js";
+import { createExportController } from "./export.js";
 import { fromPaletteInk, paletteSeedById, inkSeedById } from "./glitter-algebra.js";
 import { renderIcon } from "./ui-icons.js";
-import { drawInkSwoopPreview } from "./ink-preview.js";
 
 const DEFAULT_INK_ID = "param-og-rainbow";
 const INK_RAIL_HINT_KEY = "sparkly.inkRailHintSeen";
+const PREVIEW_BY_RUNTIME_ID = {
+  "param-og-rainbow": "./previews/rainbow-chrome.svg",
+  "param-gold": "./previews/gold.svg",
+  "param-silver": "./previews/silver.svg",
+  "param-pearl": "./previews/pearl.svg",
+  "param-opal": "./previews/opal.svg",
+  "param-rose": "./previews/rose.svg",
+  "param-galaxy": "./previews/galaxy.svg",
+  "param-ember": "./previews/ember.svg"
+};
 const parameterizedInkSpecs = [
   { inkId: "og-rainbow", runtimeId: "param-og-rainbow" },
   { inkId: "gold", runtimeId: "param-gold" },
@@ -18,9 +27,12 @@ const parameterizedInkSpecs = [
   { inkId: "ember", runtimeId: "param-ember" }
 ];
 
-const stageRoot = document.getElementById("stageRoot");
+const stageViewport = document.getElementById("stageViewport");
+const canvasShell = document.getElementById("canvasShell");
 const paintCanvas = document.getElementById("paintCanvas");
 const fxCanvas = document.getElementById("fxCanvas");
+const canvasWidthInput = document.getElementById("canvasWidthInput");
+const canvasHeightInput = document.getElementById("canvasHeightInput");
 const controlsBackdrop = document.getElementById("controlsBackdrop");
 const controlsSheet = document.getElementById("controlsSheet");
 const controlsToggle = document.getElementById("controlsToggle");
@@ -70,6 +82,7 @@ function registerParameterizedInks() {
       note: inkId === "og-rainbow"
         ? "A shifting chrome ribbon with prismatic sparkles and rotating color flips."
         : runtimePreset.note,
+      previewSrc: PREVIEW_BY_RUNTIME_ID[runtimeId],
       preset: runtimePreset
     };
   });
@@ -78,17 +91,29 @@ function registerParameterizedInks() {
 const inkEntries = registerParameterizedInks();
 const inkEntriesById = new Map(inkEntries.map((entry) => [entry.id, entry]));
 
-const canvasController = createViewportCanvasController({
+const canvasController = createCanvasController({
   elements: {
-    stageRoot,
+    stageViewport,
+    canvasShell,
     paintCanvas,
-    fxCanvas
+    fxCanvas,
+    canvasWidthInput,
+    canvasHeightInput
   },
-  onUiChange: syncUi
+  onUiChange: syncUi,
+  transparentPreviewColor: "rgba(255, 255, 255, 0.96)",
+  navigationGrowth: {
+    enabled: true,
+    initialViewportMultiplier: 2.35,
+    edgeThresholdPx: 220,
+    chunkWidth: 1024,
+    chunkHeight: 768
+  }
 });
 
-const exportController = createViewportExportController({
-  canvas: canvasController
+const exportController = createExportController({
+  canvas: canvasController,
+  paintCanvas
 });
 
 function getState() {
@@ -154,13 +179,23 @@ function buildInkPicker() {
 
   inkEntries.forEach((entry) => {
     const button = document.createElement("button");
+    const image = document.createElement("img");
+
     button.type = "button";
     button.className = "ink-option";
     button.setAttribute("role", "listitem");
     button.setAttribute("aria-label", entry.label);
     button.title = entry.label;
     button.dataset.inkId = entry.id;
-    button.innerHTML = `<canvas class="ink-option__preview" width="132" height="62" aria-hidden="true"></canvas>`;
+
+    image.className = "ink-option__preview";
+    image.src = entry.previewSrc;
+    image.alt = "";
+    image.decoding = "async";
+    image.loading = "lazy";
+    image.draggable = false;
+
+    button.appendChild(image);
     button.addEventListener("click", () => {
       markRailHintSeen();
       canvasController.setActiveInk(entry.id);
@@ -192,32 +227,15 @@ function buildBackgroundPicker() {
   backgroundPicker.appendChild(fragment);
 }
 
-function drawActiveInkPreview() {
-  const preset = inkById.get(getState().activeInkId);
-  if (!preset) {
+function updateSelectedPreview() {
+  const entry = getEntry(getState().activeInkId);
+  if (!entry) {
     return;
   }
 
-  drawInkSwoopPreview(activeInkPreview, preset, {
-    compact: true,
-    active: true
-  });
-}
-
-function redrawPickerPreviews() {
-  inkPicker.querySelectorAll(".ink-option").forEach((button) => {
-    const canvas = button.querySelector("canvas");
-    const preset = inkById.get(button.dataset.inkId);
-    if (!canvas || !preset) {
-      return;
-    }
-
-    drawInkSwoopPreview(canvas, preset, {
-      active: button.classList.contains("is-active")
-    });
-  });
-
-  drawActiveInkPreview();
+  if (activeInkPreview.getAttribute("src") !== entry.previewSrc) {
+    activeInkPreview.setAttribute("src", entry.previewSrc);
+  }
 }
 
 function scrollInkIntoView(inkId, behavior = "smooth") {
@@ -286,13 +304,13 @@ function updateActionButtons() {
 function syncUi() {
   const state = getState();
   updateInkButtons();
+  updateSelectedPreview();
   updateInkReadout();
   updateModeButtons();
   updateBackgroundButtons();
   updateActionButtons();
   brushSizeInput.value = String(state.brushSize);
   brushValue.textContent = `${state.brushSize}px`;
-  redrawPickerPreviews();
 
   if (state.activeInkId !== lastCenteredInkId && getEntry(state.activeInkId)) {
     scrollInkIntoView(state.activeInkId, lastCenteredInkId ? "smooth" : "auto");
@@ -329,7 +347,6 @@ function handleProjectOpen() {
 }
 
 function handleWindowResize() {
-  redrawPickerPreviews();
   maybePlayRailHint();
 }
 

@@ -65,18 +65,6 @@
       outline-offset: 2px;
     }
 
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
     .app {
       position: relative;
       width: 100%;
@@ -91,10 +79,42 @@
       overflow: hidden;
       background:
         radial-gradient(circle at center top, rgba(255, 255, 255, 0.68), transparent 44%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
+        linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0));
     }
 
-    .stage-root > canvas {
+    .stage-root::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 22vh;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(241, 235, 255, 0.18));
+      z-index: 1;
+    }
+
+    .stage-viewport {
+      position: absolute;
+      inset: 0;
+      overflow: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .stage-viewport::-webkit-scrollbar {
+      display: none;
+    }
+
+    .canvas-shell {
+      position: relative;
+      width: 0;
+      height: 0;
+      margin: 0 auto;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    .canvas-shell > canvas {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -135,7 +155,7 @@
         max(10px, env(safe-area-inset-left, 0px));
       display: grid;
       grid-template-rows: auto auto auto;
-      gap: 10px;
+      gap: 8px;
       align-content: start;
     }
 
@@ -169,11 +189,12 @@
     }
 
     .selected-ink__preview {
-      width: 56px;
-      height: 30px;
-      border-radius: 12px;
+      width: 58px;
+      height: 32px;
       display: block;
+      object-fit: contain;
       pointer-events: none;
+      user-select: none;
     }
 
     .selected-ink__text {
@@ -293,7 +314,7 @@
       align-items: flex-start;
       overflow-x: auto;
       overflow-y: hidden;
-      padding: 0 18px 6px;
+      padding: 0 18px 4px;
       scroll-snap-type: x proximity;
       scroll-padding-inline: 18px;
       scrollbar-width: none;
@@ -317,7 +338,9 @@
       width: 100%;
       height: 62px;
       display: block;
+      object-fit: contain;
       pointer-events: none;
+      user-select: none;
     }
 
     .ink-option::after {
@@ -530,15 +553,20 @@
 </head>
 <body>
   <main class="app">
-    <section class="stage-root" id="stageRoot">
-      <canvas id="paintCanvas" aria-hidden="true"></canvas>
-      <canvas id="fxCanvas" aria-label="Drawing surface"></canvas>
+    <section class="stage-root">
+      <div class="stage-viewport" id="stageViewport">
+        <div class="canvas-shell" id="canvasShell">
+          <canvas id="paintCanvas" aria-hidden="true"></canvas>
+          <canvas id="fxCanvas" aria-label="Drawing surface"></canvas>
+        </div>
+      </div>
+
       <button class="sheet-backdrop" id="controlsBackdrop" type="button" hidden aria-label="Close controls"></button>
 
       <div class="top-overlay">
         <div class="top-capsule">
           <button class="selected-ink" id="activeInkButton" type="button" aria-label="Selected ink">
-            <canvas class="selected-ink__preview" id="activeInkPreview" width="56" height="30" aria-hidden="true"></canvas>
+            <img class="selected-ink__preview" id="activeInkPreview" src="./previews/rainbow-chrome.svg" alt="">
             <span class="selected-ink__text">
               <strong id="activeInkName">Rainbow Chrome</strong>
               <span id="activeInkMeta">A shifting chrome ribbon with prismatic sparkles and rotating color flips.</span>
@@ -601,6 +629,8 @@
   </main>
 
   <input id="projectInput" type="file" accept=".shimmerink,.json,application/json" hidden>
+  <input id="canvasWidthInput" type="number" hidden value="0">
+  <input id="canvasHeightInput" type="number" hidden value="0">
 
   <script type="module" src="./index.js"></script>
 </body>
