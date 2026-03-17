@@ -123,7 +123,7 @@ function renderGlintBase(ctx, node, preset, time) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(node.phase * 0.35 + time * 0.00018 * preset.sheenSpeed);
-  ctx.globalCompositeOperation = preset.blendMode;
+  ctx.globalCompositeOperation = preset.glintBlendMode || preset.blendMode || "source-over";
 
   const color = preset.sparkleColor
     ? preset.sparkleColor(node, time, flicker)
