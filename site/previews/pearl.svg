@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 62" fill="none">
+  <defs>
+    <linearGradient id="wash" x1="14" y1="42" x2="118" y2="24" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d6dae9" stop-opacity=".18"/>
+      <stop offset=".34" stop-color="#c4f0e0" stop-opacity=".24"/>
+      <stop offset=".68" stop-color="#f2d5eb" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#eff7ff" stop-opacity=".16"/>
+    </linearGradient>
+    <linearGradient id="base" x1="14" y1="42" x2="118" y2="24" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#dfe4ef"/>
+      <stop offset=".34" stop-color="#eef5ff"/>
+      <stop offset=".62" stop-color="#d8f5e7"/>
+      <stop offset=".84" stop-color="#f5dde9"/>
+      <stop offset="1" stop-color="#fbfdff"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="20" y1="48" x2="110" y2="18" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" stop-opacity=".18"/>
+      <stop offset=".5" stop-color="#ffffff" stop-opacity=".56"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity=".18"/>
+    </linearGradient>
+  </defs>
+  <path d="M14 41C31 18 54 17 73 28c18 11 34 12 45-3" stroke="url(#wash)" stroke-linecap="round" stroke-width="22"/>
+  <path d="M14 41C31 18 54 17 73 28c18 11 34 12 45-3" stroke="url(#base)" stroke-linecap="round" stroke-width="16" opacity=".94"/>
+  <path d="M14 41C31 18 54 17 73 28c18 11 34 12 45-3" stroke="url(#shine)" stroke-linecap="round" stroke-width="8"/>
+  <g fill="#ffffff" fill-opacity=".9">
+    <path d="M39 24l3 5 5 3-5 3-3 5-3-5-5-3 5-3 3-5Z"/>
+    <path d="M87 20l2 4 4 2-4 2-2 4-2-4-4-2 4-2 2-4Z"/>
+  </g>
+  <g fill-opacity=".6">
+    <circle cx="22" cy="34" r="2.2" fill="#e7eef8"/>
+    <circle cx="34" cy="29" r="2" fill="#d6f1e5"/>
+    <circle cx="53" cy="22" r="2.2" fill="#f4dde9"/>
+    <circle cx="63" cy="24" r="2.3" fill="#ffffff"/>
+    <circle cx="75" cy="27" r="2.2" fill="#d8ebff"/>
+    <circle cx="98" cy="26" r="2.2" fill="#e6fff3"/>
+    <circle cx="109" cy="20" r="2.1" fill="#f8e8f2"/>
+  </g>
+</svg>
