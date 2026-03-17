@@ -1,26 +1,12 @@
-import {
-  inkById,
-  backgroundOptions,
-  createSparkleNode
-} from "./ink.js";
-import {
-  createCanvasController
-} from "./canvas.js";
-import {
-  createExportController
-} from "./export.js";
-import {
-  fromPaletteInk,
-  paletteSeedById,
-  inkSeedById
-} from "./glitter-algebra.js";
+import { inkById, backgroundOptions } from "./ink.js";
+import { createViewportCanvasController } from "./viewport-canvas.js";
+import { createViewportExportController } from "./viewport-export.js";
+import { fromPaletteInk, paletteSeedById, inkSeedById } from "./glitter-algebra.js";
+import { renderIcon } from "./ui-icons.js";
+import { drawInkSwoopPreview } from "./ink-preview.js";
 
 const DEFAULT_INK_ID = "param-og-rainbow";
-const exportLabels = {
-  save: "Save",
-  share: "Share"
-};
-
+const INK_RAIL_HINT_KEY = "sparkly.inkRailHintSeen";
 const parameterizedInkSpecs = [
   { inkId: "og-rainbow", runtimeId: "param-og-rainbow" },
   { inkId: "gold", runtimeId: "param-gold" },
@@ -32,28 +18,34 @@ const parameterizedInkSpecs = [
   { inkId: "ember", runtimeId: "param-ember" }
 ];
 
+const stageRoot = document.getElementById("stageRoot");
+const paintCanvas = document.getElementById("paintCanvas");
+const fxCanvas = document.getElementById("fxCanvas");
+const controlsBackdrop = document.getElementById("controlsBackdrop");
+const controlsSheet = document.getElementById("controlsSheet");
+const controlsToggle = document.getElementById("controlsToggle");
+const activeInkButton = document.getElementById("activeInkButton");
+const activeInkPreview = document.getElementById("activeInkPreview");
+const activeInkName = document.getElementById("activeInkName");
+const activeInkMeta = document.getElementById("activeInkMeta");
 const inkPicker = document.getElementById("inkPicker");
 const backgroundPicker = document.getElementById("backgroundPicker");
 const brushSizeInput = document.getElementById("brushSize");
 const brushValue = document.getElementById("brushValue");
-const modeButtons = Array.from(document.querySelectorAll("[data-mode]"));
+const brushModeButton = document.getElementById("brushModeButton");
+const sprayModeButton = document.getElementById("sprayModeButton");
 const undoButton = document.getElementById("undoButton");
+const shareButton = document.getElementById("shareButton");
 const saveGifButton = document.getElementById("saveGifButton");
 const clearButton = document.getElementById("clearButton");
-const saveButton = document.getElementById("saveButton");
-const openButton = document.getElementById("openButton");
-const shareButton = document.getElementById("shareButton");
-const canvasSizeForm = document.getElementById("canvasSizeForm");
-const canvasWidthInput = document.getElementById("canvasWidthInput");
-const canvasHeightInput = document.getElementById("canvasHeightInput");
+const saveProjectButton = document.getElementById("saveProjectButton");
+const openProjectButton = document.getElementById("openProjectButton");
 const projectInput = document.getElementById("projectInput");
-const activeInkName = document.getElementById("activeInkName");
-const activeInkMeta = document.getElementById("activeInkMeta");
-const controlsPopover = document.getElementById("controlsPopover");
-const stageViewport = document.getElementById("stageViewport");
-const canvasShell = document.getElementById("canvasShell");
-const paintCanvas = document.getElementById("paintCanvas");
-const fxCanvas = document.getElementById("fxCanvas");
+
+const modeButtons = [brushModeButton, sprayModeButton];
+let hasPlayedRailHint = false;
+let sheetTouchStartY = null;
+let lastCenteredInkId = null;
 
 function registerParameterizedInks() {
   return parameterizedInkSpecs.map(({ inkId, runtimeId }) => {
@@ -86,107 +78,75 @@ function registerParameterizedInks() {
 const inkEntries = registerParameterizedInks();
 const inkEntriesById = new Map(inkEntries.map((entry) => [entry.id, entry]));
 
-const canvasController = createCanvasController({
+const canvasController = createViewportCanvasController({
   elements: {
-    stageViewport,
-    canvasShell,
+    stageRoot,
     paintCanvas,
-    fxCanvas,
-    canvasWidthInput,
-    canvasHeightInput
+    fxCanvas
   },
   onUiChange: syncUi
 });
 
-const exportController = createExportController({
-  canvas: canvasController,
-  paintCanvas
+const exportController = createViewportExportController({
+  canvas: canvasController
 });
 
 function getState() {
   return canvasController.getState();
 }
 
-function hash01(value) {
-  const sine = Math.sin(value * 127.1 + value * value * 0.037) * 43758.5453123;
-  return sine - Math.floor(sine);
+function getEntry(inkId) {
+  return inkEntriesById.get(inkId) || null;
 }
 
-function lerp(start, end, amount) {
-  return start + (end - start) * amount;
+function markRailHintSeen() {
+  hasPlayedRailHint = true;
+  localStorage.setItem(INK_RAIL_HINT_KEY, "1");
 }
 
-function drawInkStripePreview(canvas, preset) {
-  const width = Math.max(canvas.clientWidth, 148);
-  const height = Math.max(canvas.clientHeight, 76);
-  const dpr = Math.max(window.devicePixelRatio || 1, 1);
-  const ctx = canvas.getContext("2d");
-  const previewBrushSize = 30;
-  const dotCount = Math.max(20, Math.min(38, Math.round(previewBrushSize * 0.96)));
-  const scatter = (preset.sprayScatter || 18) * (0.26 + previewBrushSize * 0.018);
-  const steps = 54;
-  const seed = 27.35;
-  const sparkles = [];
+function closeControls() {
+  controlsSheet.hidden = true;
+  controlsBackdrop.hidden = true;
+  controlsToggle.setAttribute("aria-expanded", "false");
+  controlsToggle.title = "Show controls";
+  controlsToggle.setAttribute("aria-label", "Show controls");
+  controlsToggle.innerHTML = renderIcon("sliders");
+}
 
-  canvas.width = Math.round(width * dpr);
-  canvas.height = Math.round(height * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, width, height);
-  ctx.imageSmoothingEnabled = true;
+function openControls() {
+  controlsSheet.hidden = false;
+  controlsBackdrop.hidden = false;
+  controlsSheet.classList.remove("is-open");
+  void controlsSheet.offsetWidth;
+  controlsSheet.classList.add("is-open");
+  controlsToggle.setAttribute("aria-expanded", "true");
+  controlsToggle.title = "Hide controls";
+  controlsToggle.setAttribute("aria-label", "Hide controls");
+  controlsToggle.innerHTML = renderIcon("chevronUp");
+}
 
-  for (let index = 0; index < steps; index += 1) {
-    const ratio = steps === 1 ? 0 : index / (steps - 1);
-    const x = -12 + ratio * (width + 24);
-    const y = height * 0.52 + Math.sin(ratio * Math.PI * 1.04 + seed * 0.01) * height * 0.045;
-    const burstRadius = 8.8 + Math.sin(ratio * Math.PI) * 1.8;
-    const burst = {
-      x,
-      y,
-      radius: burstRadius,
-      angle: Math.sin(ratio * Math.PI * 1.2) * 0.04,
-      pressure: 0.94,
-      travel: ratio * width * 0.62,
-      progress: ratio * 6.2,
-      seed,
-      isSpray: true
-    };
-
-    for (let dot = 0; dot < dotCount; dot += 1) {
-      const key = seed + index * 31.7 + dot * 9.1;
-      const theta = hash01(key) * Math.PI * 2;
-      const distance = Math.sqrt(hash01(key + 1.7)) * scatter;
-      const stamp = {
-        x: burst.x + Math.cos(theta) * distance,
-        y: burst.y + Math.sin(theta) * distance,
-        radius: burstRadius * lerp(0.16, 0.35, hash01(key + 2.4)),
-        angle: burst.angle + (hash01(key + 3.9) - 0.5) * 0.6,
-        pressure: burst.pressure,
-        travel: burst.travel,
-        progress: burst.progress + dot * 0.055,
-        seed: burst.seed + dot * 0.01,
-        isSpray: true
-      };
-      preset.renderStamp(ctx, stamp, 0);
-    }
-
-    if (index % 4 === 0) {
-      sparkles.push(createSparkleNode(burst, preset, seed + index * 1.73));
-    }
+function toggleControls() {
+  if (controlsSheet.hidden) {
+    openControls();
+  } else {
+    closeControls();
   }
-
-  sparkles.slice(0, 10).forEach((node, index) => {
-    preset.renderGlint(ctx, node, 1100 + index * 37);
-  });
 }
 
-function redrawPickerPreviews() {
-  inkPicker.querySelectorAll(".ink-option").forEach((button) => {
-    const canvas = button.querySelector("canvas");
-    const preset = inkById.get(button.dataset.inkId);
-    if (canvas && preset) {
-      drawInkStripePreview(canvas, preset);
-    }
-  });
+function updateControlIcons() {
+  undoButton.innerHTML = renderIcon("undo");
+  shareButton.innerHTML = renderIcon("share");
+  controlsToggle.innerHTML = renderIcon("sliders");
+  brushModeButton.innerHTML = renderIcon("brush");
+  sprayModeButton.innerHTML = renderIcon("spray");
+  saveGifButton.innerHTML = renderIcon("download");
+  clearButton.innerHTML = renderIcon("trash");
+  saveProjectButton.innerHTML = renderIcon("saveProject");
+  openProjectButton.innerHTML = renderIcon("folderOpen");
+  document.getElementById("modeIconHost").innerHTML = renderIcon("chevronDown");
+  document.getElementById("brushIconHost").innerHTML = renderIcon("brush");
+  document.getElementById("backgroundIconHost").innerHTML = renderIcon("circle");
+  document.getElementById("actionsIconHost").innerHTML = renderIcon("sliders");
 }
 
 function buildInkPicker() {
@@ -197,13 +157,14 @@ function buildInkPicker() {
     button.type = "button";
     button.className = "ink-option";
     button.setAttribute("role", "listitem");
-    button.dataset.inkId = entry.id;
     button.setAttribute("aria-label", entry.label);
     button.title = entry.label;
-    button.innerHTML = `
-      <canvas class="ink-option__preview" width="148" height="76" aria-hidden="true"></canvas>
-    `;
-    button.addEventListener("click", () => canvasController.setActiveInk(entry.id));
+    button.dataset.inkId = entry.id;
+    button.innerHTML = `<canvas class="ink-option__preview" width="132" height="62" aria-hidden="true"></canvas>`;
+    button.addEventListener("click", () => {
+      markRailHintSeen();
+      canvasController.setActiveInk(entry.id);
+    });
     fragment.appendChild(button);
   });
 
@@ -218,8 +179,9 @@ function buildBackgroundPicker() {
     button.type = "button";
     button.className = `background-chip ${background.className || ""}`.trim();
     button.setAttribute("role", "listitem");
-    button.dataset.backgroundId = background.id;
     button.setAttribute("aria-label", background.label);
+    button.title = background.label;
+    button.dataset.backgroundId = background.id;
     if (background.color) {
       button.style.setProperty("--bg-color", background.color);
     }
@@ -228,6 +190,47 @@ function buildBackgroundPicker() {
   });
 
   backgroundPicker.appendChild(fragment);
+}
+
+function drawActiveInkPreview() {
+  const preset = inkById.get(getState().activeInkId);
+  if (!preset) {
+    return;
+  }
+
+  drawInkSwoopPreview(activeInkPreview, preset, {
+    compact: true,
+    active: true
+  });
+}
+
+function redrawPickerPreviews() {
+  inkPicker.querySelectorAll(".ink-option").forEach((button) => {
+    const canvas = button.querySelector("canvas");
+    const preset = inkById.get(button.dataset.inkId);
+    if (!canvas || !preset) {
+      return;
+    }
+
+    drawInkSwoopPreview(canvas, preset, {
+      active: button.classList.contains("is-active")
+    });
+  });
+
+  drawActiveInkPreview();
+}
+
+function scrollInkIntoView(inkId, behavior = "smooth") {
+  const button = inkPicker.querySelector(`[data-ink-id="${inkId}"]`);
+  if (!button) {
+    return;
+  }
+
+  button.scrollIntoView({
+    behavior,
+    block: "nearest",
+    inline: "center"
+  });
 }
 
 function updateInkButtons() {
@@ -239,11 +242,20 @@ function updateInkButtons() {
 
 function updateInkReadout() {
   const state = getState();
-  const entry = inkEntriesById.get(state.activeInkId);
+  const entry = getEntry(state.activeInkId);
   const preset = inkById.get(state.activeInkId);
 
   activeInkName.textContent = entry ? entry.label : preset?.label || "Ink";
   activeInkMeta.textContent = entry?.note || preset?.note || "";
+}
+
+function updateModeButtons() {
+  const state = getState();
+  modeButtons.forEach((button) => {
+    const isActive = button.dataset.mode === state.mode;
+    button.classList.toggle("tool-icon--active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
 }
 
 function updateBackgroundButtons() {
@@ -253,114 +265,139 @@ function updateBackgroundButtons() {
   });
 }
 
-function updateCanvasPreviewBackground() {
-  const state = getState();
-  if (state.exportBackgroundId === "transparent") {
-    canvasShell.style.background = "#ffffff";
-    canvasShell.style.backgroundSize = "auto";
-    canvasShell.style.backgroundPosition = "0 0";
-  }
-}
-
-function updateModeButtons() {
-  const state = getState();
-  modeButtons.forEach((button) => {
-    const isActive = button.dataset.mode === state.mode;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-pressed", String(isActive));
-  });
-}
-
 function updateActionButtons() {
   const state = getState();
-  const hasCommittedStrokes = state.strokes.length > 0;
-  const hasAnything = hasCommittedStrokes || Boolean(state.activeStroke);
+  const hasCommitted = state.strokes.length > 0;
+  const hasAnything = hasCommitted || Boolean(state.activeStroke);
+  const isSharing = state.exportingKind === "share-gif";
+  const isSavingGif = state.exportingKind === "gif";
   const isExporting = Boolean(state.exportingKind);
 
-  undoButton.disabled = !hasCommittedStrokes;
+  undoButton.disabled = !hasCommitted;
+  shareButton.disabled = !hasAnything || isExporting;
   saveGifButton.disabled = !hasAnything || isExporting;
   clearButton.disabled = !hasAnything;
-  shareButton.disabled = !hasAnything || isExporting;
-  saveButton.disabled = isExporting;
-  openButton.disabled = isExporting;
-}
+  saveProjectButton.disabled = !hasAnything || isExporting;
 
-function updateExportButtons() {
-  const state = getState();
-  const isSavingGif = state.exportingKind === "gif";
-  const isSharingGif = state.exportingKind === "share-gif";
-
+  shareButton.classList.toggle("is-busy", isSharing);
   saveGifButton.classList.toggle("is-busy", isSavingGif);
-  shareButton.classList.toggle("is-busy", isSharingGif);
-  saveGifButton.textContent = isSavingGif ? "Saving..." : exportLabels.save;
-  shareButton.textContent = isSharingGif ? "Sharing..." : exportLabels.share;
-}
-
-function updateBrushSizeReadout() {
-  const state = getState();
-  brushSizeInput.value = String(state.brushSize);
-  brushValue.textContent = `${state.brushSize} px`;
 }
 
 function syncUi() {
-  updateBrushSizeReadout();
+  const state = getState();
   updateInkButtons();
   updateInkReadout();
-  updateBackgroundButtons();
-  updateCanvasPreviewBackground();
   updateModeButtons();
-  updateExportButtons();
+  updateBackgroundButtons();
   updateActionButtons();
+  brushSizeInput.value = String(state.brushSize);
+  brushValue.textContent = `${state.brushSize}px`;
+  redrawPickerPreviews();
+
+  if (state.activeInkId !== lastCenteredInkId && getEntry(state.activeInkId)) {
+    scrollInkIntoView(state.activeInkId, lastCenteredInkId ? "smooth" : "auto");
+    lastCenteredInkId = state.activeInkId;
+  }
 }
 
-function handleCanvasSizeSubmit(event) {
-  event.preventDefault();
-  canvasController.applySceneSize(Number(canvasWidthInput.value), Number(canvasHeightInput.value));
+function maybePlayRailHint() {
+  if (hasPlayedRailHint) {
+    return;
+  }
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    markRailHintSeen();
+    return;
+  }
+
+  if (inkPicker.scrollWidth <= inkPicker.clientWidth + 12) {
+    return;
+  }
+
+  hasPlayedRailHint = true;
+  setTimeout(() => {
+    inkPicker.scrollTo({ left: 32, behavior: "smooth" });
+    setTimeout(() => {
+      inkPicker.scrollTo({ left: 0, behavior: "smooth" });
+      localStorage.setItem(INK_RAIL_HINT_KEY, "1");
+    }, 420);
+  }, 480);
 }
 
-let previewResizeFrame = 0;
+function handleProjectOpen() {
+  projectInput.click();
+}
 
-window.addEventListener("resize", () => {
-  cancelAnimationFrame(previewResizeFrame);
-  previewResizeFrame = requestAnimationFrame(redrawPickerPreviews);
-});
+function handleWindowResize() {
+  redrawPickerPreviews();
+  maybePlayRailHint();
+}
 
-document.addEventListener("click", (event) => {
-  if (controlsPopover.open && !controlsPopover.contains(event.target)) {
-    controlsPopover.open = false;
-  }
-});
+function initializeSheetSwipeClose() {
+  controlsSheet.addEventListener("touchstart", (event) => {
+    sheetTouchStartY = event.touches[0]?.clientY ?? null;
+  }, { passive: true });
 
-window.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    controlsPopover.open = false;
-  }
-});
+  controlsSheet.addEventListener("touchend", (event) => {
+    if (sheetTouchStartY == null) {
+      return;
+    }
 
-brushSizeInput.addEventListener("input", (event) => {
-  canvasController.setBrushSize(Number(event.target.value));
-});
-
-modeButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    canvasController.setMode(button.dataset.mode);
+    const endY = event.changedTouches[0]?.clientY ?? sheetTouchStartY;
+    if (endY - sheetTouchStartY < -42) {
+      closeControls();
+    }
+    sheetTouchStartY = null;
   });
-});
+}
 
-undoButton.addEventListener("click", () => canvasController.undoLastStroke());
-saveGifButton.addEventListener("click", () => exportController.exportGif());
-clearButton.addEventListener("click", () => canvasController.clearAllStrokes());
-saveButton.addEventListener("click", () => exportController.saveProject());
-openButton.addEventListener("click", () => projectInput.click());
-shareButton.addEventListener("click", () => exportController.shareGif());
-canvasSizeForm.addEventListener("submit", handleCanvasSizeSubmit);
-projectInput.addEventListener("change", (event) => exportController.openProjectFile(event));
+function initialize() {
+  updateControlIcons();
+  buildInkPicker();
+  buildBackgroundPicker();
 
-buildInkPicker();
-buildBackgroundPicker();
-canvasController.setActiveInk(DEFAULT_INK_ID);
-canvasController.setMode("spray");
-canvasController.setExportBackground("transparent");
-canvasController.initialize();
-syncUi();
-redrawPickerPreviews();
+  canvasController.setActiveInk(DEFAULT_INK_ID);
+  canvasController.setMode("spray");
+  canvasController.setExportBackground("transparent");
+  canvasController.initialize();
+
+  controlsToggle.addEventListener("click", toggleControls);
+  controlsBackdrop.addEventListener("click", closeControls);
+  activeInkButton.addEventListener("click", () => scrollInkIntoView(getState().activeInkId));
+  undoButton.addEventListener("click", () => canvasController.undoLastStroke());
+  shareButton.addEventListener("click", () => exportController.shareGif());
+  saveGifButton.addEventListener("click", () => exportController.exportGif());
+  clearButton.addEventListener("click", () => canvasController.clearAllStrokes());
+  saveProjectButton.addEventListener("click", () => exportController.saveProject());
+  openProjectButton.addEventListener("click", handleProjectOpen);
+  projectInput.addEventListener("change", (event) => exportController.openProjectFile(event));
+  brushSizeInput.addEventListener("input", (event) => canvasController.setBrushSize(Number(event.target.value)));
+  modeButtons.forEach((button) => {
+    button.addEventListener("click", () => canvasController.setMode(button.dataset.mode));
+  });
+  inkPicker.addEventListener("scroll", () => {
+    if (!hasPlayedRailHint) {
+      markRailHintSeen();
+    }
+  }, { passive: true });
+  window.addEventListener("resize", handleWindowResize);
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeControls();
+    }
+  });
+
+  initializeSheetSwipeClose();
+  closeControls();
+  syncUi();
+
+  if (localStorage.getItem(INK_RAIL_HINT_KEY)) {
+    hasPlayedRailHint = true;
+  } else {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(maybePlayRailHint);
+    });
+  }
+}
+
+initialize();

@@ -7,15 +7,20 @@
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <style>
     :root {
-      --bg: #f5f5f3;
-      --ink: #1d1e22;
-      --muted: #66635e;
-      --line: rgba(24, 28, 38, 0.11);
-      --panel: rgba(255, 255, 255, 0.94);
-      --panel-strong: rgba(255, 255, 255, 0.98);
-      --focus: #2f7cf6;
-      --shadow-lg: 0 18px 42px rgba(24, 28, 38, 0.1);
-      --shadow-sm: 0 10px 24px rgba(24, 28, 38, 0.08);
+      --bg-top: #fff9f2;
+      --bg-bottom: #f1ebff;
+      --ink: #2a2140;
+      --muted: rgba(61, 48, 88, 0.72);
+      --line: rgba(86, 64, 145, 0.16);
+      --panel: rgba(255, 252, 255, 0.84);
+      --panel-strong: rgba(255, 252, 255, 0.95);
+      --shadow-lg: 0 18px 42px rgba(77, 48, 140, 0.16);
+      --shadow-md: 0 10px 28px rgba(77, 48, 140, 0.14);
+      --shadow-sm: 0 6px 18px rgba(77, 48, 140, 0.1);
+      --plum: #6f46e6;
+      --pink: #f178c8;
+      --sky: #66c5ff;
+      --surface: rgba(249, 244, 255, 0.76);
       color-scheme: light;
     }
 
@@ -26,395 +31,70 @@
     html,
     body {
       margin: 0;
-      min-height: 100%;
-    }
-
-    body {
-      font-family: "Avenir Next", "Segoe UI", sans-serif;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at top left, rgba(255, 255, 255, 0.94), transparent 34%),
-        radial-gradient(circle at 84% 12%, rgba(201, 224, 255, 0.28), transparent 28%),
-        linear-gradient(180deg, #fafaf8 0%, #f1f1ee 100%);
+      width: 100%;
+      height: 100%;
       overflow: hidden;
     }
 
+    body {
+      font-family: ui-rounded, "SF Pro Rounded", "Avenir Next Rounded", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.94), transparent 24%),
+        radial-gradient(circle at 82% 10%, rgba(102, 197, 255, 0.18), transparent 22%),
+        radial-gradient(circle at 78% 84%, rgba(241, 120, 200, 0.12), transparent 18%),
+        linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    }
+
     button,
-    input,
-    summary {
+    input {
       font: inherit;
     }
 
     button {
       border: 0;
+      padding: 0;
+      background: transparent;
+      color: inherit;
       cursor: pointer;
     }
 
     button:focus-visible,
-    input:focus-visible,
-    summary:focus-visible {
-      outline: 3px solid color-mix(in srgb, var(--focus) 40%, white);
+    input:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--plum) 36%, white);
       outline-offset: 2px;
     }
 
-    .app-shell {
-      height: 100vh;
-      max-width: 1600px;
-      margin: 0 auto;
-      padding: 10px 14px 8px;
-      display: grid;
-      grid-template-rows: auto auto 1fr;
-      gap: 6px;
-    }
-
-    .header-bar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 6px 16px;
-    }
-
-    .brand {
-      display: grid;
-      gap: 1px;
-      min-width: 0;
-    }
-
-    .brand-meta {
-      display: grid;
-      gap: 1px;
-      min-width: 0;
-    }
-
-    .brand-meta strong {
-      font-size: clamp(1rem, 2.1vw, 1.2rem);
-      letter-spacing: -0.02em;
-    }
-
-    .brand-meta span {
-      font-size: 0.88rem;
-      color: var(--muted);
-      line-height: 1.24;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: min(80vw, 760px);
-    }
-
-    .header-tools {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 8px;
-      min-width: min(100%, 560px);
-    }
-
-    .action-strip {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: flex-end;
-    }
-
-    .toolbar-button,
-    .action-button,
-    .segment-button {
-      padding: 9px 13px;
-      border-radius: 14px;
-      border: 1px solid var(--line);
-      background: var(--panel);
-      box-shadow: var(--shadow-sm);
-      color: var(--ink);
-      font-size: 0.92rem;
-      font-weight: 700;
-      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
-    }
-
-    .toolbar-button,
-    .action-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      white-space: nowrap;
-    }
-
-    .toolbar-button:hover,
-    .action-button:hover:not(:disabled),
-    .segment-button:hover {
-      transform: translateY(-1px);
-    }
-
-    .action-button--primary {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(226, 238, 255, 0.94));
-    }
-
-    .action-button:disabled {
-      cursor: not-allowed;
-      opacity: 0.42;
-      transform: none;
-    }
-
-    .action-button.is-busy {
-      opacity: 1;
-      color: #12345e;
-      background: linear-gradient(120deg, rgba(255, 255, 255, 0.98), rgba(177, 218, 255, 0.96) 42%, rgba(212, 189, 255, 0.92));
-      box-shadow: 0 0 0 3px rgba(47, 124, 246, 0.12);
-    }
-
-    .action-button.is-busy::after {
-      content: "";
-      display: inline-block;
-      width: 0.82em;
-      height: 0.82em;
-      margin-left: 0.5em;
-      border-radius: 999px;
-      border: 2px solid rgba(18, 52, 94, 0.2);
-      border-top-color: rgba(18, 52, 94, 0.92);
-      animation: export-spin 0.7s linear infinite;
-      vertical-align: -0.1em;
-    }
-
-    .controls-popover {
-      position: relative;
-    }
-
-    .controls-popover summary {
-      list-style: none;
-      cursor: pointer;
-    }
-
-    .controls-popover summary::-webkit-details-marker {
-      display: none;
-    }
-
-    .controls-popover[open] > summary {
-      border-color: rgba(47, 124, 246, 0.32);
-      box-shadow: 0 0 0 3px rgba(47, 124, 246, 0.1);
-    }
-
-    .controls-panel {
+    .sr-only {
       position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      z-index: 20;
-      width: min(430px, 92vw);
-      display: grid;
-      gap: 10px;
-      padding: 12px;
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      background: var(--panel-strong);
-      box-shadow: var(--shadow-lg);
-      backdrop-filter: blur(18px);
-    }
-
-    .group-label {
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: #6a665f;
-    }
-
-    .slider-card,
-    .segmented,
-    .background-card,
-    .size-card {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      border-radius: 16px;
-      border: 1px solid var(--line);
-      background: rgba(248, 249, 251, 0.92);
-    }
-
-    .slider-card {
-      justify-content: space-between;
-    }
-
-    .slider-label {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 4px 8px;
-      min-width: 104px;
-      font-size: 0.84rem;
-      color: var(--muted);
-    }
-
-    .slider-value {
-      font-size: 0.96rem;
-      font-weight: 700;
-      color: var(--ink);
-    }
-
-    .slider-card input[type="range"] {
-      width: min(40vw, 180px);
-      accent-color: #2f7cf6;
-    }
-
-    .segmented {
-      gap: 6px;
-      justify-content: flex-end;
-    }
-
-    .segment-button {
-      box-shadow: none;
-      background: transparent;
-      color: var(--muted);
-    }
-
-    .segment-button.is-active {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(226, 238, 255, 0.94));
-      color: var(--ink);
-    }
-
-    .background-card,
-    .size-card {
-      flex-wrap: wrap;
-    }
-
-    .background-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .background-chip {
-      position: relative;
-      width: 28px;
-      height: 28px;
-      border-radius: 999px;
-      border: 1px solid rgba(25, 25, 25, 0.14);
-      background: var(--bg-color, #ffffff);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
-    }
-
-    .background-chip.is-active {
-      border-color: rgba(47, 124, 246, 0.42);
-      box-shadow: 0 0 0 3px rgba(47, 124, 246, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.82);
-    }
-
-    .background-chip--transparent {
-      background: rgba(255, 255, 255, 0.96);
-    }
-
-    .background-chip--transparent::after {
-      content: "";
-      position: absolute;
-      inset: 6px;
-      border-radius: 999px;
-      border: 2px solid rgba(160, 51, 51, 0.45);
-      transform: rotate(-24deg);
-    }
-
-    .size-grid {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .size-field {
-      display: grid;
-      gap: 3px;
-      min-width: 72px;
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #6a665f;
-    }
-
-    .size-field input {
-      width: 100%;
-      padding: 7px 9px;
-      border-radius: 10px;
-      border: 1px solid rgba(25, 25, 25, 0.1);
-      background: rgba(255, 255, 255, 0.94);
-      color: var(--ink);
-    }
-
-    .size-apply {
-      padding-inline: 12px;
-    }
-
-    .ink-shelf {
-      min-width: 0;
-    }
-
-    .ink-strip {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
-      gap: 8px;
-      align-items: stretch;
+      width: 1px;
+      height: 1px;
       padding: 0;
-    }
-
-    .ink-option {
-      position: relative;
-      display: block;
-      min-width: 0;
-      padding: 0 0 5px;
-      background: transparent;
-      color: inherit;
-      text-align: left;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
       border: 0;
     }
 
-    .ink-option__preview {
-      width: 100%;
-      height: 66px;
-      display: block;
-      pointer-events: none;
-    }
-
-    .ink-option::after {
-      content: "";
-      display: block;
-      width: 100%;
-      height: 3px;
-      border-radius: 999px;
-      background: transparent;
-      transition: background 160ms ease;
-    }
-
-    .ink-option.is-active::after {
-      background: linear-gradient(90deg, rgba(47, 124, 246, 0.1), rgba(47, 124, 246, 0.78), rgba(47, 124, 246, 0.1));
-    }
-
-    .ink-option.is-active .ink-option__preview {
-      filter: drop-shadow(0 6px 14px rgba(47, 124, 246, 0.16));
-    }
-
-    .workspace {
-      min-height: 0;
-    }
-
-    .stage-viewport {
+    .app {
       position: relative;
-      height: 100%;
-      min-height: 0;
-      overflow: auto;
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .canvas-shell {
-      position: relative;
-      width: 0;
-      height: 0;
-      margin: 0 auto;
-      border-radius: 24px;
+      width: 100%;
+      height: 100dvh;
       overflow: hidden;
-      background: transparent;
     }
 
-    .canvas-shell > canvas {
+    .stage-root {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at center top, rgba(255, 255, 255, 0.68), transparent 44%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0));
+    }
+
+    .stage-root > canvas {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -431,126 +111,491 @@
       cursor: crosshair;
     }
 
-    @keyframes export-spin {
+    .sheet-backdrop {
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+      background: rgba(53, 30, 90, 0.08);
+      backdrop-filter: blur(2px);
+    }
+
+    .sheet-backdrop[hidden] {
+      display: none;
+    }
+
+    .top-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 9;
+      pointer-events: none;
+      padding:
+        calc(env(safe-area-inset-top, 0px) + 10px)
+        max(10px, env(safe-area-inset-right, 0px))
+        max(10px, env(safe-area-inset-bottom, 0px))
+        max(10px, env(safe-area-inset-left, 0px));
+      display: grid;
+      grid-template-rows: auto auto auto;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .top-capsule,
+    .ink-rail-shell,
+    .top-sheet {
+      pointer-events: auto;
+    }
+
+    .top-capsule {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--panel);
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(18px);
+    }
+
+    .selected-ink {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 4px 6px 4px 2px;
+      border-radius: 18px;
+    }
+
+    .selected-ink__preview {
+      width: 56px;
+      height: 30px;
+      border-radius: 12px;
+      display: block;
+      pointer-events: none;
+    }
+
+    .selected-ink__text {
+      min-width: 0;
+      display: grid;
+      gap: 1px;
+      text-align: left;
+    }
+
+    .selected-ink__text strong {
+      font-size: 1rem;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+
+    .selected-ink__text span {
+      font-size: 0.87rem;
+      color: var(--muted);
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .capsule-actions,
+    .sheet-actions,
+    .mode-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-button,
+    .tool-icon,
+    .background-chip {
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow-sm);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease, background 150ms ease, color 150ms ease;
+      color: var(--ink);
+    }
+
+    .icon-button:hover:not(:disabled),
+    .tool-icon:hover:not(:disabled),
+    .background-chip:hover {
+      transform: translateY(-1px);
+    }
+
+    .icon-button:disabled,
+    .tool-icon:disabled {
+      cursor: not-allowed;
+      opacity: 0.42;
+      transform: none;
+    }
+
+    .icon-button--primary {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(231, 225, 255, 0.92));
+      color: var(--plum);
+    }
+
+    .icon-button.is-busy,
+    .tool-icon.is-busy {
+      color: var(--plum);
+      border-color: rgba(111, 70, 230, 0.3);
+      box-shadow: 0 0 0 4px rgba(111, 70, 230, 0.12), var(--shadow-sm);
+    }
+
+    .icon-button.is-busy .ui-icon,
+    .tool-icon.is-busy .ui-icon {
+      animation: icon-spin 0.7s linear infinite;
+    }
+
+    .icon-button--active,
+    .tool-icon--active {
+      color: var(--plum);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(231, 225, 255, 0.94));
+      border-color: rgba(111, 70, 230, 0.28);
+    }
+
+    .ink-rail-shell {
+      position: relative;
+      overflow: hidden;
+      border-radius: 22px;
+      padding: 2px 0;
+    }
+
+    .ink-rail-shell::before,
+    .ink-rail-shell::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 34px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .ink-rail-shell::before {
+      left: 0;
+      background: linear-gradient(90deg, rgba(246, 239, 255, 0.95), rgba(246, 239, 255, 0));
+    }
+
+    .ink-rail-shell::after {
+      right: 0;
+      background: linear-gradient(270deg, rgba(246, 239, 255, 0.95), rgba(246, 239, 255, 0));
+    }
+
+    .ink-strip {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0 18px 6px;
+      scroll-snap-type: x proximity;
+      scroll-padding-inline: 18px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .ink-strip::-webkit-scrollbar {
+      display: none;
+    }
+
+    .ink-option {
+      position: relative;
+      flex: 0 0 132px;
+      scroll-snap-align: center;
+      padding: 0 0 5px;
+      border-radius: 18px;
+      color: inherit;
+    }
+
+    .ink-option__preview {
+      width: 100%;
+      height: 62px;
+      display: block;
+      pointer-events: none;
+    }
+
+    .ink-option::after {
+      content: "";
+      display: block;
+      width: 100%;
+      height: 3px;
+      border-radius: 999px;
+      background: transparent;
+      transition: background 150ms ease;
+    }
+
+    .ink-option.is-active::after {
+      background: linear-gradient(90deg, rgba(111, 70, 230, 0), rgba(111, 70, 230, 0.72), rgba(241, 120, 200, 0.65), rgba(102, 197, 255, 0.62), rgba(111, 70, 230, 0));
+    }
+
+    .top-sheet {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--panel-strong);
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(18px);
+      transform-origin: top center;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .top-sheet[hidden] {
+      display: none;
+    }
+
+    .sheet-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(111, 70, 230, 0.1);
+      background: var(--surface);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    }
+
+    .sheet-row__icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--plum);
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(111, 70, 230, 0.12);
+    }
+
+    .sheet-row__main {
+      min-width: 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .mode-toggle {
+      justify-content: flex-start;
+    }
+
+    .slider-stack {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .slider-stack input[type="range"] {
+      width: 100%;
+      accent-color: var(--plum);
+    }
+
+    .slider-value {
+      min-width: 54px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      text-align: right;
+    }
+
+    .background-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .background-chip {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1px solid rgba(52, 41, 76, 0.16);
+      background: var(--bg-color, #ffffff);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+    }
+
+    .background-chip.is-active {
+      border-color: rgba(111, 70, 230, 0.36);
+      box-shadow: 0 0 0 4px rgba(111, 70, 230, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.82);
+    }
+
+    .background-chip--transparent {
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    .background-chip--transparent::after {
+      content: "";
+      position: absolute;
+      inset: 7px;
+      border-radius: 999px;
+      border: 2px solid rgba(170, 74, 96, 0.55);
+      transform: rotate(-24deg);
+    }
+
+    .sheet-actions {
+      flex-wrap: wrap;
+    }
+
+    .top-sheet.is-open {
+      animation: sheet-drop 180ms ease;
+    }
+
+    @keyframes sheet-drop {
+      from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes icon-spin {
       to {
         transform: rotate(360deg);
       }
     }
 
-    @media (max-width: 1100px) {
-      body {
-        overflow: auto;
-      }
-
-      .app-shell {
-        height: auto;
-        min-height: 100vh;
-      }
-    }
-
     @media (max-width: 760px) {
-      .app-shell {
-        padding: 8px 10px 6px;
+      .top-overlay {
+        gap: 8px;
+        padding:
+          calc(env(safe-area-inset-top, 0px) + 8px)
+          max(8px, env(safe-area-inset-right, 0px))
+          max(8px, env(safe-area-inset-bottom, 0px))
+          max(8px, env(safe-area-inset-left, 0px));
       }
 
-      .header-tools {
-        min-width: 100%;
-        justify-content: flex-start;
+      .top-capsule {
+        gap: 8px;
+        padding: 8px 10px;
       }
 
-      .controls-panel {
-        position: static;
-        width: 100%;
-        margin-top: 8px;
+      .selected-ink {
+        gap: 8px;
       }
 
-      .slider-card input[type="range"] {
-        width: 100%;
+      .selected-ink__preview {
+        width: 48px;
+        height: 28px;
       }
 
-      .ink-strip {
-        grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+      .selected-ink__text strong {
+        font-size: 0.94rem;
+      }
+
+      .selected-ink__text span {
+        font-size: 0.8rem;
+      }
+
+      .capsule-actions,
+      .sheet-actions,
+      .mode-toggle {
+        gap: 6px;
+      }
+
+      .icon-button,
+      .tool-icon {
+        width: 42px;
+        height: 42px;
+      }
+
+      .ink-option {
+        flex-basis: 118px;
       }
 
       .ink-option__preview {
-        height: 58px;
+        height: 56px;
+      }
+
+      .sheet-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .sheet-row__icon {
+        display: none;
       }
     }
   </style>
 </head>
 <body>
-  <main class="app-shell">
-    <header class="header-bar">
-      <div class="brand">
-        <div class="brand-meta">
-          <strong id="activeInkName">Rainbow Chrome</strong>
-          <span id="activeInkMeta">A shifting chrome ribbon with prismatic sparkles and rotating color flips.</span>
-        </div>
-      </div>
+  <main class="app">
+    <section class="stage-root" id="stageRoot">
+      <canvas id="paintCanvas" aria-hidden="true"></canvas>
+      <canvas id="fxCanvas" aria-label="Drawing surface"></canvas>
+      <button class="sheet-backdrop" id="controlsBackdrop" type="button" hidden aria-label="Close controls"></button>
 
-      <div class="header-tools">
-        <div class="action-strip">
-          <button class="action-button" id="undoButton" type="button">Undo</button>
-          <button class="action-button action-button--primary" id="saveGifButton" type="button">Save</button>
-          <button class="action-button action-button--primary" id="shareButton" type="button" title="Share GIF. Downloads the GIF if native sharing is unavailable.">Share</button>
-        </div>
+      <div class="top-overlay">
+        <div class="top-capsule">
+          <button class="selected-ink" id="activeInkButton" type="button" aria-label="Selected ink">
+            <canvas class="selected-ink__preview" id="activeInkPreview" width="56" height="30" aria-hidden="true"></canvas>
+            <span class="selected-ink__text">
+              <strong id="activeInkName">Rainbow Chrome</strong>
+              <span id="activeInkMeta">A shifting chrome ribbon with prismatic sparkles and rotating color flips.</span>
+            </span>
+          </button>
 
-        <details class="controls-popover" id="controlsPopover">
-          <summary class="toolbar-button">Controls</summary>
-          <div class="controls-panel">
-            <div class="slider-card">
-              <label class="slider-label" for="brushSize">
-                Brush Size
-                <span class="slider-value" id="brushValue">20 px</span>
-              </label>
-              <input id="brushSize" type="range" min="6" max="48" step="1" value="20" aria-label="Brush size">
-            </div>
-
-            <div class="segmented" role="group" aria-label="Drawing mode">
-              <button class="segment-button" type="button" data-mode="brush" aria-pressed="false">Brush</button>
-              <button class="segment-button is-active" type="button" data-mode="spray" aria-pressed="true">Spray</button>
-            </div>
-
-            <div class="segmented" role="group" aria-label="Project actions">
-              <button class="segment-button" id="clearButton" type="button">Clear</button>
-              <button class="segment-button" id="saveButton" type="button">Save Project</button>
-              <button class="segment-button" id="openButton" type="button">Open</button>
-            </div>
-
-            <div class="background-card">
-              <span class="group-label">Background</span>
-              <div id="backgroundPicker" class="background-grid" role="list" aria-label="Export background"></div>
-            </div>
-
-            <form class="size-card" id="canvasSizeForm">
-              <span class="group-label">Canvas Size</span>
-              <div class="size-grid">
-                <label class="size-field" for="canvasWidthInput">
-                  Width
-                  <input id="canvasWidthInput" type="number" min="320" max="4096" step="10" inputmode="numeric" value="0">
-                </label>
-                <label class="size-field" for="canvasHeightInput">
-                  Height
-                  <input id="canvasHeightInput" type="number" min="320" max="4096" step="10" inputmode="numeric" value="0">
-                </label>
-                <button class="action-button size-apply" type="submit">Resize</button>
-              </div>
-            </form>
+          <div class="capsule-actions">
+            <button class="icon-button" id="undoButton" type="button" title="Undo" aria-label="Undo"></button>
+            <button class="icon-button icon-button--primary" id="shareButton" type="button" title="Share GIF" aria-label="Share GIF"></button>
+            <button class="icon-button" id="controlsToggle" type="button" title="Show controls" aria-label="Show controls" aria-expanded="false"></button>
           </div>
-        </details>
-      </div>
-    </header>
-
-    <section class="ink-shelf" aria-label="Ink shelf">
-      <div id="inkPicker" class="ink-strip" role="list"></div>
-    </section>
-
-    <section class="workspace">
-      <div class="stage-viewport" id="stageViewport">
-        <div class="canvas-shell" id="canvasShell">
-          <canvas id="paintCanvas" aria-hidden="true"></canvas>
-          <canvas id="fxCanvas" aria-label="Drawing surface"></canvas>
         </div>
+
+        <div class="ink-rail-shell">
+          <div class="ink-strip" id="inkPicker" role="list" aria-label="Ink palette"></div>
+        </div>
+
+        <section class="top-sheet" id="controlsSheet" hidden aria-label="Controls">
+          <div class="sheet-row">
+            <span class="sheet-row__icon" id="modeIconHost"></span>
+            <div class="sheet-row__main">
+              <div class="mode-toggle" role="group" aria-label="Drawing mode">
+                <button class="tool-icon" id="brushModeButton" type="button" data-mode="brush" aria-label="Brush mode" title="Brush mode"></button>
+                <button class="tool-icon" id="sprayModeButton" type="button" data-mode="spray" aria-label="Spray mode" title="Spray mode"></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sheet-row">
+            <span class="sheet-row__icon" id="brushIconHost"></span>
+            <div class="sheet-row__main">
+              <div class="slider-stack">
+                <input id="brushSize" type="range" min="6" max="48" step="1" value="20" aria-label="Brush size">
+                <span class="slider-value" id="brushValue">20px</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="sheet-row">
+            <span class="sheet-row__icon" id="backgroundIconHost"></span>
+            <div class="sheet-row__main">
+              <div class="background-grid" id="backgroundPicker" role="list" aria-label="Export background"></div>
+            </div>
+          </div>
+
+          <div class="sheet-row">
+            <span class="sheet-row__icon" id="actionsIconHost"></span>
+            <div class="sheet-row__main">
+              <div class="sheet-actions">
+                <button class="tool-icon" id="saveGifButton" type="button" title="Save GIF" aria-label="Save GIF"></button>
+                <button class="tool-icon" id="clearButton" type="button" title="Clear drawing" aria-label="Clear drawing"></button>
+                <button class="tool-icon" id="saveProjectButton" type="button" title="Save project" aria-label="Save project"></button>
+                <button class="tool-icon" id="openProjectButton" type="button" title="Open project" aria-label="Open project"></button>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </section>
   </main>
