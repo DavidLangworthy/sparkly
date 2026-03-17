@@ -190,11 +190,12 @@ function drawStreakGlint(ctx, radius, alpha, flicker) {
 function drawFoilGlint(ctx, radius, alpha, flicker) {
   const color = ctx.strokeStyle;
   const halo = ctx.createRadialGradient(0, 0, radius * 0.04, 0, 0, radius * 1.18);
-  halo.addColorStop(0, "rgba(255,255,255,0.98)");
-  halo.addColorStop(0.22, color);
+  halo.addColorStop(0, color);
+  halo.addColorStop(0.26, color);
+  halo.addColorStop(0.72, "rgba(255,255,255,0.12)");
   halo.addColorStop(1, "rgba(255,255,255,0)");
 
-  ctx.globalAlpha = alpha * (0.48 + flicker * 0.18);
+  ctx.globalAlpha = alpha * (0.34 + flicker * 0.12);
   ctx.beginPath();
   ctx.arc(0, 0, radius * (0.8 + flicker * 0.12), 0, TAU);
   ctx.fillStyle = halo;
@@ -203,7 +204,7 @@ function drawFoilGlint(ctx, radius, alpha, flicker) {
   ctx.fillStyle = color;
   drawStreakGlint(ctx, radius * 1.04, alpha * 1.04, flicker);
 
-  ctx.globalAlpha = alpha * (0.82 + flicker * 0.16);
+  ctx.globalAlpha = alpha * (0.72 + flicker * 0.14);
   ctx.beginPath();
   ctx.moveTo(0, -radius * 1.02);
   ctx.lineTo(radius * 0.76, 0);
@@ -240,10 +241,11 @@ function drawDustGlint(ctx, radius, alpha, flicker) {
 
 function drawSoftGlint(ctx, radius, alpha, flicker) {
   const glow = ctx.createRadialGradient(0, 0, radius * 0.08, 0, 0, radius * 1.5);
-  glow.addColorStop(0, "rgba(255,255,255,0.95)");
+  glow.addColorStop(0, ctx.strokeStyle);
   glow.addColorStop(0.35, ctx.fillStyle);
+  glow.addColorStop(0.78, "rgba(255,255,255,0.1)");
   glow.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.globalAlpha = alpha * 0.62;
+  ctx.globalAlpha = alpha * 0.54;
   ctx.beginPath();
   ctx.arc(0, 0, radius * (0.7 + flicker * 0.25), 0, TAU);
   ctx.fillStyle = glow;

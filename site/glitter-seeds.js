@@ -28,8 +28,8 @@ const sparkleProfiles = {
     sizeMin: 1.7,
     sizeMax: 5.35,
     hueRange: 236,
-    brightnessMin: 0.68,
-    brightnessMax: 1.72,
+    brightnessMin: 0.62,
+    brightnessMax: 1.68,
     driftMin: 0.22,
     driftMax: 1.22,
     hotspotChance: 0.12,
@@ -40,8 +40,8 @@ const sparkleProfiles = {
     sizeMin: 1.7,
     sizeMax: 5.4,
     hueRange: 278,
-    brightnessMin: 0.7,
-    brightnessMax: 1.78,
+    brightnessMin: 0.62,
+    brightnessMax: 1.7,
     driftMin: 0.22,
     driftMax: 1.22,
     hotspotChance: 0.12,
@@ -52,8 +52,8 @@ const sparkleProfiles = {
     sizeMin: 1.7,
     sizeMax: 5.25,
     hueRange: 224,
-    brightnessMin: 0.68,
-    brightnessMax: 1.7,
+    brightnessMin: 0.62,
+    brightnessMax: 1.68,
     driftMin: 0.21,
     driftMax: 1.18,
     hotspotChance: 0.1,
@@ -64,8 +64,8 @@ const sparkleProfiles = {
     sizeMin: 1.9,
     sizeMax: 5.7,
     hueRange: 312,
-    brightnessMin: 0.78,
-    brightnessMax: 1.86,
+    brightnessMin: 0.7,
+    brightnessMax: 1.78,
     driftMin: 0.24,
     driftMax: 1.28,
     hotspotChance: 0.14,
@@ -76,8 +76,8 @@ const sparkleProfiles = {
     sizeMin: 1.8,
     sizeMax: 5.8,
     hueRange: 320,
-    brightnessMin: 0.62,
-    brightnessMax: 1.56,
+    brightnessMin: 0.56,
+    brightnessMax: 1.5,
     driftMin: 0.2,
     driftMax: 1.16,
     hotspotChance: 0.08,
@@ -127,37 +127,37 @@ const sparkleMotions = {
   gold: {
     hueOffsetScale: 0.24,
     timeSinSpeed: 0.0013,
-    timeSinAmplitude: 18,
+    timeSinAmplitude: 28,
     timeCosSpeed: 0.0009,
-    timeCosAmplitude: 8
+    timeCosAmplitude: 12
   },
   silver: {
     hueOffsetScale: 0.36,
     timeSinSpeed: 0.00125,
-    timeSinAmplitude: 22,
+    timeSinAmplitude: 34,
     timeCosSpeed: 0.00095,
-    timeCosAmplitude: 10
+    timeCosAmplitude: 16
   },
   rose: {
     hueOffsetScale: 0.22,
     timeSinSpeed: 0.00125,
-    timeSinAmplitude: 18,
+    timeSinAmplitude: 26,
     timeCosSpeed: 0.0009,
-    timeCosAmplitude: 6
+    timeCosAmplitude: 10
   },
   pearl: {
     hueOffsetScale: 0.36,
     timeSinSpeed: 0.00115,
-    timeSinAmplitude: 74,
+    timeSinAmplitude: 92,
     timeCosSpeed: 0.0007,
-    timeCosAmplitude: 18
+    timeCosAmplitude: 28
   },
   opal: {
     hueOffsetScale: 0.44,
     timeSinSpeed: 0.00115,
-    timeSinAmplitude: 88,
+    timeSinAmplitude: 102,
     timeCosSpeed: 0.0008,
-    timeCosAmplitude: 24
+    timeCosAmplitude: 34
   },
   galaxy: {
     hueOffsetScale: 0.34,
@@ -564,15 +564,16 @@ const inkSeedDefinitions = [
     },
     sparkle: {
       baseColors: [
-        "rgba(255,246,220,0.96)",
-        "rgba(255,219,134,0.94)",
-        "rgba(241,255,183,0.9)"
+        "rgba(255,238,194,0.96)",
+        "rgba(255,209,88,0.94)",
+        "rgba(222,255,120,0.88)",
+        "rgba(255,184,82,0.9)"
       ],
-      hueBase: 52,
-      saturationBase: 96,
-      saturationAmplitude: 12,
-      lightnessBase: 80,
-      lightnessAmplitude: 8,
+      hueBase: 48,
+      saturationBase: 88,
+      saturationAmplitude: 26,
+      lightnessBase: 66,
+      lightnessAmplitude: 14,
       alpha: 0.96
     },
     sparkleProfile: sparkleProfiles.gold,
@@ -588,10 +589,10 @@ const inkSeedDefinitions = [
     body: {
       hueBase: 214,
       paletteStops: [
-        { hueShift: -24, saturation: 28, lightness: 12, alpha: 0.96 },
-        { hueShift: -6, saturation: 24, lightness: 32, alpha: 0.94 },
-        { hueShift: 10, saturation: 28, lightness: 68, alpha: 0.9 },
-        { hueShift: 34, saturation: 54, lightness: 95, alpha: 0.88 }
+        { hueShift: -36, saturation: 34, lightness: 10, alpha: 0.96 },
+        { hueShift: -10, saturation: 28, lightness: 28, alpha: 0.94 },
+        { hueShift: 18, saturation: 32, lightness: 62, alpha: 0.9 },
+        { hueShift: 46, saturation: 62, lightness: 94, alpha: 0.88 }
       ]
     },
     shine: {
@@ -611,16 +612,16 @@ const inkSeedDefinitions = [
     },
     sparkle: {
       baseColors: [
-        "rgba(255,255,255,0.96)",
-        "rgba(204,233,255,0.94)",
-        "rgba(219,213,255,0.92)",
-        "rgba(190,241,255,0.9)"
+        "rgba(230,243,255,0.94)",
+        "rgba(170,214,255,0.92)",
+        "rgba(196,187,255,0.9)",
+        "rgba(171,245,255,0.88)"
       ],
-      hueBase: 220,
-      saturationBase: 82,
-      saturationAmplitude: 18,
-      lightnessBase: 82,
-      lightnessAmplitude: 9,
+      hueBase: 224,
+      saturationBase: 72,
+      saturationAmplitude: 28,
+      lightnessBase: 68,
+      lightnessAmplitude: 16,
       alpha: 0.95
     },
     sparkleProfile: sparkleProfiles.silver,
@@ -659,16 +660,16 @@ const inkSeedDefinitions = [
     },
     sparkle: {
       baseColors: [
-        "rgba(255,236,232,0.95)",
-        "rgba(255,188,196,0.92)",
-        "rgba(255,226,183,0.9)",
-        "rgba(255,202,170,0.9)"
+        "rgba(255,229,220,0.95)",
+        "rgba(255,170,186,0.9)",
+        "rgba(255,214,160,0.88)",
+        "rgba(255,196,138,0.9)"
       ],
-      hueBase: 17,
-      saturationBase: 92,
-      saturationAmplitude: 16,
-      lightnessBase: 84,
-      lightnessAmplitude: 8,
+      hueBase: 12,
+      saturationBase: 84,
+      saturationAmplitude: 24,
+      lightnessBase: 70,
+      lightnessAmplitude: 14,
       alpha: 0.95
     },
     sparkleProfile: sparkleProfiles.rose,
@@ -684,10 +685,10 @@ const inkSeedDefinitions = [
     body: {
       hueBase: 206,
       paletteStops: [
-        { hueShift: -96, saturation: 16, lightness: 44, alpha: 0.7 },
-        { hueShift: -18, saturation: 24, lightness: 72, alpha: 0.8 },
-        { hueShift: 52, saturation: 34, lightness: 90, alpha: 0.84 },
-        { hueShift: 112, saturation: 54, lightness: 97, alpha: 0.88 }
+        { hueShift: -112, saturation: 24, lightness: 38, alpha: 0.74 },
+        { hueShift: -24, saturation: 34, lightness: 68, alpha: 0.82 },
+        { hueShift: 62, saturation: 42, lightness: 88, alpha: 0.86 },
+        { hueShift: 124, saturation: 62, lightness: 96, alpha: 0.88 }
       ]
     },
     shine: {
@@ -707,16 +708,16 @@ const inkSeedDefinitions = [
     },
     sparkle: {
       baseColors: [
-        "rgba(255,248,255,0.95)",
-        "rgba(201,244,255,0.9)",
-        "rgba(255,213,235,0.9)",
-        "rgba(219,255,224,0.88)"
+        "rgba(243,236,255,0.94)",
+        "rgba(186,249,233,0.88)",
+        "rgba(255,210,236,0.88)",
+        "rgba(214,239,255,0.9)"
       ],
-      hueBase: 212,
-      saturationBase: 72,
-      saturationAmplitude: 18,
-      lightnessBase: 88,
-      lightnessAmplitude: 7,
+      hueBase: 226,
+      saturationBase: 70,
+      saturationAmplitude: 30,
+      lightnessBase: 76,
+      lightnessAmplitude: 16,
       alpha: 0.94
     },
     sparkleProfile: sparkleProfiles.pearl,
@@ -732,10 +733,10 @@ const inkSeedDefinitions = [
     body: {
       hueBase: 162,
       paletteStops: [
-        { hueShift: -18, saturation: 52, lightness: 52, alpha: 0.78 },
-        { hueShift: 92, saturation: 64, lightness: 78, alpha: 0.82 },
-        { hueShift: 160, saturation: 86, lightness: 92, alpha: 0.9 },
-        { hueShift: 196, saturation: 80, lightness: 84, alpha: 0.86 }
+        { hueShift: -26, saturation: 60, lightness: 46, alpha: 0.8 },
+        { hueShift: 100, saturation: 70, lightness: 72, alpha: 0.84 },
+        { hueShift: 168, saturation: 90, lightness: 90, alpha: 0.9 },
+        { hueShift: 208, saturation: 86, lightness: 80, alpha: 0.86 }
       ]
     },
     shine: {
@@ -755,16 +756,16 @@ const inkSeedDefinitions = [
     },
     sparkle: {
       baseColors: [
-        "rgba(230,255,246,0.94)",
-        "rgba(221,224,255,0.94)",
-        "rgba(255,219,252,0.92)",
-        "rgba(255,236,194,0.9)"
+        "rgba(208,255,238,0.92)",
+        "rgba(207,214,255,0.92)",
+        "rgba(255,208,244,0.9)",
+        "rgba(255,232,156,0.88)"
       ],
-      hueBase: 178,
-      saturationBase: 94,
-      saturationAmplitude: 14,
-      lightnessBase: 82,
-      lightnessAmplitude: 6,
+      hueBase: 170,
+      saturationBase: 90,
+      saturationAmplitude: 22,
+      lightnessBase: 74,
+      lightnessAmplitude: 14,
       alpha: 0.94
     },
     sparkleProfile: sparkleProfiles.opal,
