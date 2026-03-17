@@ -226,6 +226,11 @@ function setViewMode(nextMode) {
 
   if (currentViewMode === "variants") {
     renderVariantSheet();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        queueVariantPreviewRender();
+      });
+    });
   }
 
   syncOverlayOffset();
@@ -241,6 +246,7 @@ function updateControlIcons() {
   clearButton.innerHTML = renderIcon("trash");
   saveProjectButton.innerHTML = renderIcon("saveProject");
   openProjectButton.innerHTML = renderIcon("folderOpen");
+  document.getElementById("viewIconHost").innerHTML = renderIcon("palette");
   document.getElementById("modeIconHost").innerHTML = renderIcon("chevronDown");
   document.getElementById("brushIconHost").innerHTML = renderIcon("brush");
   document.getElementById("backgroundIconHost").innerHTML = renderIcon("circle");
@@ -382,9 +388,23 @@ function updateActionButtons() {
   saveGifButton.classList.toggle("is-busy", isSavingGif);
 }
 
-function queueVariantPreviewRender() {
+function queueVariantPreviewRender(attempt = 0) {
   cancelAnimationFrame(variantPreviewQueueId);
   variantPreviewQueueId = requestAnimationFrame(() => {
+    if (currentViewMode !== "variants") {
+      return;
+    }
+
+    const hasRealCanvasSize = variantPreviewEntries.every(({ canvas }) => {
+      const rect = canvas.getBoundingClientRect();
+      return rect.width >= 40 && rect.height >= 40;
+    });
+
+    if (!hasRealCanvasSize && attempt < 6) {
+      queueVariantPreviewRender(attempt + 1);
+      return;
+    }
+
     const activeRuntimeId = getSelectedRuntimeId(currentBaseInkId);
     variantPreviewEntries.forEach(({ canvas, variant }) => {
       drawInkSwoopPreview(canvas, variant.preset, {

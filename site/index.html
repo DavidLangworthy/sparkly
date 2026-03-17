@@ -366,14 +366,12 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      align-self: center;
       padding: 4px;
       border: 1px solid var(--line);
       border-radius: 999px;
       background: rgba(255, 252, 255, 0.78);
       box-shadow: var(--shadow-sm);
       backdrop-filter: blur(14px);
-      pointer-events: auto;
     }
 
     .view-chip {
@@ -714,11 +712,6 @@
         height: 56px;
       }
 
-      .view-switch {
-        width: 100%;
-        justify-content: center;
-      }
-
       .view-chip {
         flex: 1 1 0;
         min-width: 0;
@@ -803,12 +796,17 @@
           <div class="ink-strip" id="inkPicker" role="list" aria-label="Ink palette"></div>
         </div>
 
-        <div class="view-switch" role="tablist" aria-label="Workspace view">
-          <button class="view-chip view-chip--active" id="drawViewButton" type="button" data-view="draw" role="tab" aria-selected="true">Draw</button>
-          <button class="view-chip" id="variantsViewButton" type="button" data-view="variants" role="tab" aria-selected="false">Variants</button>
-        </div>
-
         <section class="top-sheet" id="controlsSheet" hidden aria-label="Controls">
+          <div class="sheet-row">
+            <span class="sheet-row__icon" id="viewIconHost"></span>
+            <div class="sheet-row__main">
+              <div class="view-switch" role="tablist" aria-label="Workspace view">
+                <button class="view-chip view-chip--active" id="drawViewButton" type="button" data-view="draw" role="tab" aria-selected="true">Draw</button>
+                <button class="view-chip" id="variantsViewButton" type="button" data-view="variants" role="tab" aria-selected="false">Variants</button>
+              </div>
+            </div>
+          </div>
+
           <div class="sheet-row">
             <span class="sheet-row__icon" id="modeIconHost"></span>
             <div class="sheet-row__main">

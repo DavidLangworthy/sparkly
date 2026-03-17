@@ -61,6 +61,13 @@ const ICON_PATHS = {
   `,
   circle: `
     <circle cx="12" cy="12" r="9"/>
+  `,
+  palette: `
+    <path d="M12 3a9 9 0 1 0 0 18h1.2a2.8 2.8 0 0 0 0-5.6H12a1.8 1.8 0 0 1 0-3.6h1.5A4.5 4.5 0 0 0 18 7.3 4.3 4.3 0 0 0 12 3Z"/>
+    <circle cx="7.5" cy="10" r=".9"/>
+    <circle cx="9.5" cy="6.8" r=".9"/>
+    <circle cx="15.2" cy="8.1" r=".9"/>
+    <circle cx="16.4" cy="12.5" r=".9"/>
   `
 };
 
