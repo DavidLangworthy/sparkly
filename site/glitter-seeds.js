@@ -538,6 +538,7 @@ const inkSeedDefinitions = [
       label: "Metallic Gold",
       note: "Antique-to-champagne foil with brighter metallic fire and sharper flash points."
     },
+    glintBlendMode: "source-over",
     body: {
       hueBase: 43,
       paletteStops: [
@@ -586,6 +587,7 @@ const inkSeedDefinitions = [
       label: "Metallic Silver",
       note: "Layered steel foil with icy cyan-lilac flashes and brighter mirror cuts."
     },
+    glintBlendMode: "source-over",
     body: {
       hueBase: 214,
       paletteStops: [
@@ -634,6 +636,7 @@ const inkSeedDefinitions = [
       label: "Rose Foil",
       note: "Rose foil with plum-copper body color and brighter champagne flash."
     },
+    glintBlendMode: "source-over",
     body: {
       hueBase: 352,
       paletteStops: [
@@ -682,6 +685,7 @@ const inkSeedDefinitions = [
       label: "Pearl Mist",
       note: "Milky pearl with mint-lilac interference and brighter opaline flashes."
     },
+    glintBlendMode: "source-over",
     body: {
       hueBase: 206,
       paletteStops: [
@@ -730,6 +734,7 @@ const inkSeedDefinitions = [
       label: "Opal Veil",
       note: "Pale aqua-lilac pigment with peach fire and drifting opalescent flashes."
     },
+    glintBlendMode: "source-over",
     body: {
       hueBase: 162,
       paletteStops: [

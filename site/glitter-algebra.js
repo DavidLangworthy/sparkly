@@ -46,6 +46,8 @@ const glintStyleOptions = [
   { value: "ember", label: "Ember" }
 ];
 
+const glintBlendModeValues = ["source-over", "lighter", "screen"];
+
 const DEFAULT_PALETTE_RAW = defaultPaletteDefinition;
 const DEFAULT_INK_RAW = defaultInkDefinition;
 
@@ -95,6 +97,18 @@ function isColorString(value) {
 
 function normalizeColorString(value, fallback) {
   return isColorString(value) ? value.trim() : fallback;
+}
+
+function normalizeOptionalGlintBlendMode(value, fallback) {
+  if (glintBlendModeValues.includes(value)) {
+    return value;
+  }
+
+  if (glintBlendModeValues.includes(fallback)) {
+    return fallback;
+  }
+
+  return undefined;
 }
 
 function normalizePaletteStops(rawStops, fallbackStops) {
@@ -221,6 +235,7 @@ function normalizeInkDefinition(raw) {
   const sparkle = definition.sparkle && typeof definition.sparkle === "object" ? definition.sparkle : {};
   const sparkleProfile = definition.sparkleProfile && typeof definition.sparkleProfile === "object" ? definition.sparkleProfile : {};
   const sparkleMotion = definition.sparkleMotion && typeof definition.sparkleMotion === "object" ? definition.sparkleMotion : {};
+  const glintBlendMode = normalizeOptionalGlintBlendMode(definition.glintBlendMode, fallback.glintBlendMode);
 
   return {
     meta: {
@@ -258,7 +273,8 @@ function normalizeInkDefinition(raw) {
       alpha: clampAlpha(sparkle.alpha, fallback.sparkle.alpha)
     },
     sparkleProfile: normalizeSparkleProfile(sparkleProfile, fallback.sparkleProfile),
-    sparkleMotion: normalizeSparkleMotion(sparkleMotion, fallback.sparkleMotion)
+    sparkleMotion: normalizeSparkleMotion(sparkleMotion, fallback.sparkleMotion),
+    ...(glintBlendMode ? { glintBlendMode } : {})
   };
 }
 
@@ -306,6 +322,7 @@ function fromPaletteInk({ palette, ink }) {
     baseColors: neutralPalette.slice(0, 3),
     sparkleColors: normalizedInk.sparkle.baseColors,
     blendMode: normalizedPalette.finish.blendMode,
+    glintBlendMode: normalizedInk.glintBlendMode || normalizedPalette.finish.blendMode,
     sheenSpeed: normalizedPalette.finish.sheenSpeed,
     sparkleDensity: normalizedInk.sparkleProfile.density,
     sparkleSizeRange: [normalizedInk.sparkleProfile.sizeMin, normalizedInk.sparkleProfile.sizeMax],
