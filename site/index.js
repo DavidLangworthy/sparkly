@@ -1,38 +1,24 @@
 import { inkById, backgroundOptions } from "./ink.js";
 import { createCanvasController } from "./canvas.js";
 import { createExportController } from "./export.js";
-import { fromPaletteInk, paletteSeedById, inkSeedById } from "./glitter-algebra.js";
+import { buildParameterizedInkCatalog } from "./ink-variants.js";
+import { drawInkSwoopPreview } from "./ink-preview.js";
 import { renderIcon } from "./ui-icons.js";
 
-const DEFAULT_INK_ID = "param-og-rainbow";
+const DEFAULT_BASE_INK_ID = "og-rainbow";
+const DEFAULT_VIEW_MODE = "draw";
 const INK_RAIL_HINT_KEY = "sparkly.inkRailHintSeen";
-const PREVIEW_BY_RUNTIME_ID = {
-  "param-og-rainbow": "./previews/rainbow-chrome.svg",
-  "param-gold": "./previews/gold.svg",
-  "param-silver": "./previews/silver.svg",
-  "param-pearl": "./previews/pearl.svg",
-  "param-opal": "./previews/opal.svg",
-  "param-rose": "./previews/rose.svg",
-  "param-galaxy": "./previews/galaxy.svg",
-  "param-ember": "./previews/ember.svg"
-};
-const parameterizedInkSpecs = [
-  { inkId: "og-rainbow", runtimeId: "param-og-rainbow" },
-  { inkId: "gold", runtimeId: "param-gold" },
-  { inkId: "silver", runtimeId: "param-silver" },
-  { inkId: "pearl", runtimeId: "param-pearl" },
-  { inkId: "opal", runtimeId: "param-opal" },
-  { inkId: "rose", runtimeId: "param-rose" },
-  { inkId: "galaxy", runtimeId: "param-galaxy" },
-  { inkId: "ember", runtimeId: "param-ember" }
-];
+const VARIANT_SELECTIONS_KEY = "sparkly.variantSelections.v1";
+const VIEW_MODE_KEY = "sparkly.index.viewMode.v1";
 
+const stageRoot = document.getElementById("stageRoot");
 const stageViewport = document.getElementById("stageViewport");
 const canvasShell = document.getElementById("canvasShell");
 const paintCanvas = document.getElementById("paintCanvas");
 const fxCanvas = document.getElementById("fxCanvas");
 const canvasWidthInput = document.getElementById("canvasWidthInput");
 const canvasHeightInput = document.getElementById("canvasHeightInput");
+const topOverlay = document.getElementById("topOverlay");
 const controlsBackdrop = document.getElementById("controlsBackdrop");
 const controlsSheet = document.getElementById("controlsSheet");
 const controlsToggle = document.getElementById("controlsToggle");
@@ -41,6 +27,12 @@ const activeInkPreview = document.getElementById("activeInkPreview");
 const activeInkName = document.getElementById("activeInkName");
 const activeInkMeta = document.getElementById("activeInkMeta");
 const inkPicker = document.getElementById("inkPicker");
+const drawViewButton = document.getElementById("drawViewButton");
+const variantsViewButton = document.getElementById("variantsViewButton");
+const variantSheet = document.getElementById("variantSheet");
+const variantSheetTitle = document.getElementById("variantSheetTitle");
+const variantSheetNote = document.getElementById("variantSheetNote");
+const variantGrid = document.getElementById("variantGrid");
 const backgroundPicker = document.getElementById("backgroundPicker");
 const brushSizeInput = document.getElementById("brushSize");
 const brushValue = document.getElementById("brushValue");
@@ -55,41 +47,13 @@ const openProjectButton = document.getElementById("openProjectButton");
 const projectInput = document.getElementById("projectInput");
 
 const modeButtons = [brushModeButton, sprayModeButton];
-let hasPlayedRailHint = false;
-let sheetTouchStartY = null;
-let lastCenteredInkId = null;
-
-function registerParameterizedInks() {
-  return parameterizedInkSpecs.map(({ inkId, runtimeId }) => {
-    const ink = inkSeedById.get(inkId);
-    const palette = paletteSeedById.get(ink.meta.paletteId);
-    const runtimePreset = fromPaletteInk({
-      palette,
-      ink: {
-        ...ink,
-        meta: {
-          ...ink.meta,
-          id: runtimeId
-        }
-      }
-    });
-
-    inkById.set(runtimeId, runtimePreset);
-    const label = inkId === "og-rainbow" ? "Rainbow Chrome" : runtimePreset.label;
-    return {
-      id: runtimeId,
-      label,
-      note: inkId === "og-rainbow"
-        ? "A shifting chrome ribbon with prismatic sparkles and rotating color flips."
-        : runtimePreset.note,
-      previewSrc: PREVIEW_BY_RUNTIME_ID[runtimeId],
-      preset: runtimePreset
-    };
-  });
-}
-
-const inkEntries = registerParameterizedInks();
-const inkEntriesById = new Map(inkEntries.map((entry) => [entry.id, entry]));
+const viewButtons = [drawViewButton, variantsViewButton];
+const {
+  entries: inkEntries,
+  entryByBaseInkId,
+  variantByRuntimeId
+} = buildParameterizedInkCatalog(inkById);
+const selectedRuntimeByBaseInkId = new Map(inkEntries.map((entry) => [entry.baseInkId, entry.defaultRuntimeId]));
 
 const canvasController = createCanvasController({
   elements: {
@@ -116,17 +80,106 @@ const exportController = createExportController({
   paintCanvas
 });
 
+let currentBaseInkId = DEFAULT_BASE_INK_ID;
+let currentViewMode = DEFAULT_VIEW_MODE;
+let hasPlayedRailHint = false;
+let sheetTouchStartY = null;
+let lastCenteredBaseInkId = null;
+let lastVariantSheetKey = "";
+let variantPreviewQueueId = 0;
+let variantPreviewEntries = [];
+let overlaySyncId = 0;
+
 function getState() {
   return canvasController.getState();
 }
 
-function getEntry(inkId) {
-  return inkEntriesById.get(inkId) || null;
+function getEntry(baseInkId) {
+  return entryByBaseInkId.get(baseInkId) || null;
+}
+
+function getVariantMatch(runtimeId) {
+  return variantByRuntimeId.get(runtimeId) || null;
+}
+
+function getSelectedRuntimeId(baseInkId = currentBaseInkId) {
+  const entry = getEntry(baseInkId);
+  if (!entry) {
+    return null;
+  }
+
+  return selectedRuntimeByBaseInkId.get(baseInkId) || entry.defaultRuntimeId;
+}
+
+function getSelectedVariant(baseInkId = currentBaseInkId) {
+  const entry = getEntry(baseInkId);
+  const runtimeId = getSelectedRuntimeId(baseInkId);
+  return entry?.variants.find((variant) => variant.runtimeId === runtimeId) || entry?.variants[0] || null;
+}
+
+function loadVariantSelections() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(VARIANT_SELECTIONS_KEY) || "{}");
+    if (!raw || typeof raw !== "object") {
+      return;
+    }
+
+    inkEntries.forEach((entry) => {
+      const runtimeId = raw[entry.baseInkId];
+      if (typeof runtimeId !== "string") {
+        return;
+      }
+
+      const match = getVariantMatch(runtimeId);
+      if (match && match.entry.baseInkId === entry.baseInkId) {
+        selectedRuntimeByBaseInkId.set(entry.baseInkId, runtimeId);
+      }
+    });
+  } catch {
+    // Ignore malformed local drafts and keep curated defaults.
+  }
+}
+
+function saveVariantSelections() {
+  const serialized = {};
+  selectedRuntimeByBaseInkId.forEach((runtimeId, baseInkId) => {
+    serialized[baseInkId] = runtimeId;
+  });
+  localStorage.setItem(VARIANT_SELECTIONS_KEY, JSON.stringify(serialized));
+}
+
+function loadViewMode() {
+  const saved = localStorage.getItem(VIEW_MODE_KEY);
+  if (saved === "variants") {
+    currentViewMode = "variants";
+  }
+}
+
+function saveViewMode() {
+  localStorage.setItem(VIEW_MODE_KEY, currentViewMode);
+}
+
+function syncInkSelectionFromCanvas() {
+  const match = getVariantMatch(getState().activeInkId);
+  if (!match) {
+    return;
+  }
+
+  currentBaseInkId = match.entry.baseInkId;
+  selectedRuntimeByBaseInkId.set(match.entry.baseInkId, match.variant.runtimeId);
 }
 
 function markRailHintSeen() {
   hasPlayedRailHint = true;
   localStorage.setItem(INK_RAIL_HINT_KEY, "1");
+}
+
+function syncOverlayOffset() {
+  cancelAnimationFrame(overlaySyncId);
+  overlaySyncId = requestAnimationFrame(() => {
+    const rect = topOverlay.getBoundingClientRect();
+    stageRoot.style.setProperty("--overlay-offset", `${Math.ceil(rect.height + 12)}px`);
+  });
 }
 
 function closeControls() {
@@ -136,6 +189,7 @@ function closeControls() {
   controlsToggle.title = "Show controls";
   controlsToggle.setAttribute("aria-label", "Show controls");
   controlsToggle.innerHTML = renderIcon("sliders");
+  syncOverlayOffset();
 }
 
 function openControls() {
@@ -148,6 +202,7 @@ function openControls() {
   controlsToggle.title = "Hide controls";
   controlsToggle.setAttribute("aria-label", "Hide controls");
   controlsToggle.innerHTML = renderIcon("chevronUp");
+  syncOverlayOffset();
 }
 
 function toggleControls() {
@@ -156,6 +211,24 @@ function toggleControls() {
   } else {
     closeControls();
   }
+}
+
+function setViewMode(nextMode) {
+  if (nextMode !== "draw" && nextMode !== "variants") {
+    return;
+  }
+
+  currentViewMode = nextMode;
+  stageViewport.hidden = nextMode === "variants";
+  variantSheet.hidden = nextMode !== "variants";
+  saveViewMode();
+  updateViewButtons();
+
+  if (currentViewMode === "variants") {
+    renderVariantSheet();
+  }
+
+  syncOverlayOffset();
 }
 
 function updateControlIcons() {
@@ -186,7 +259,7 @@ function buildInkPicker() {
     button.setAttribute("role", "listitem");
     button.setAttribute("aria-label", entry.label);
     button.title = entry.label;
-    button.dataset.inkId = entry.id;
+    button.dataset.baseInkId = entry.baseInkId;
 
     image.className = "ink-option__preview";
     image.src = entry.previewSrc;
@@ -198,7 +271,7 @@ function buildInkPicker() {
     button.appendChild(image);
     button.addEventListener("click", () => {
       markRailHintSeen();
-      canvasController.setActiveInk(entry.id);
+      activateBaseInk(entry.baseInkId);
     });
     fragment.appendChild(button);
   });
@@ -228,7 +301,7 @@ function buildBackgroundPicker() {
 }
 
 function updateSelectedPreview() {
-  const entry = getEntry(getState().activeInkId);
+  const entry = getEntry(currentBaseInkId);
   if (!entry) {
     return;
   }
@@ -238,8 +311,8 @@ function updateSelectedPreview() {
   }
 }
 
-function scrollInkIntoView(inkId, behavior = "smooth") {
-  const button = inkPicker.querySelector(`[data-ink-id="${inkId}"]`);
+function scrollInkIntoView(baseInkId, behavior = "smooth") {
+  const button = inkPicker.querySelector(`[data-base-ink-id="${baseInkId}"]`);
   if (!button) {
     return;
   }
@@ -252,19 +325,27 @@ function scrollInkIntoView(inkId, behavior = "smooth") {
 }
 
 function updateInkButtons() {
-  const state = getState();
   inkPicker.querySelectorAll(".ink-option").forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.inkId === state.activeInkId);
+    button.classList.toggle("is-active", button.dataset.baseInkId === currentBaseInkId);
   });
 }
 
 function updateInkReadout() {
-  const state = getState();
-  const entry = getEntry(state.activeInkId);
-  const preset = inkById.get(state.activeInkId);
+  const entry = getEntry(currentBaseInkId);
+  const variant = getSelectedVariant(currentBaseInkId);
 
-  activeInkName.textContent = entry ? entry.label : preset?.label || "Ink";
-  activeInkMeta.textContent = entry?.note || preset?.note || "";
+  activeInkName.textContent = entry?.label || "Ink";
+  activeInkMeta.textContent = variant
+    ? `${variant.label} · ${variant.description}`
+    : entry?.note || "";
+}
+
+function updateViewButtons() {
+  viewButtons.forEach((button) => {
+    const isActive = button.dataset.view === currentViewMode;
+    button.classList.toggle("view-chip--active", isActive);
+    button.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
 }
 
 function updateModeButtons() {
@@ -301,21 +382,131 @@ function updateActionButtons() {
   saveGifButton.classList.toggle("is-busy", isSavingGif);
 }
 
+function queueVariantPreviewRender() {
+  cancelAnimationFrame(variantPreviewQueueId);
+  variantPreviewQueueId = requestAnimationFrame(() => {
+    const activeRuntimeId = getSelectedRuntimeId(currentBaseInkId);
+    variantPreviewEntries.forEach(({ canvas, variant }) => {
+      drawInkSwoopPreview(canvas, variant.preset, {
+        active: activeRuntimeId === variant.runtimeId
+      });
+    });
+  });
+}
+
+function renderVariantSheet() {
+  const entry = getEntry(currentBaseInkId);
+  const activeRuntimeId = getSelectedRuntimeId(currentBaseInkId);
+  const nextKey = `${currentBaseInkId}:${activeRuntimeId}`;
+
+  if (!entry) {
+    return;
+  }
+
+  if (lastVariantSheetKey === nextKey && currentViewMode === "variants") {
+    queueVariantPreviewRender();
+    return;
+  }
+
+  lastVariantSheetKey = nextKey;
+  variantPreviewEntries = [];
+  variantGrid.textContent = "";
+  variantSheetTitle.textContent = `${entry.label} Test Sheet`;
+  variantSheetNote.textContent = entry.note;
+
+  entry.variants.forEach((variant) => {
+    const card = document.createElement("button");
+    const top = document.createElement("div");
+    const text = document.createElement("div");
+    const title = document.createElement("strong");
+    const description = document.createElement("p");
+    const badge = document.createElement("span");
+    const preview = document.createElement("canvas");
+
+    card.type = "button";
+    card.className = "variant-card";
+    card.dataset.runtimeId = variant.runtimeId;
+    card.dataset.variantId = variant.id;
+    card.setAttribute("aria-pressed", activeRuntimeId === variant.runtimeId ? "true" : "false");
+
+    top.className = "variant-card__top";
+    text.className = "variant-card__text";
+    title.className = "variant-card__title";
+    description.className = "variant-card__description";
+    badge.className = "variant-card__badge";
+    preview.className = "variant-card__preview";
+
+    title.textContent = variant.label;
+    description.textContent = variant.description;
+    badge.textContent = activeRuntimeId === variant.runtimeId ? "Using in canvas" : "Tap to use";
+
+    text.appendChild(title);
+    text.appendChild(description);
+    top.appendChild(text);
+    top.appendChild(badge);
+    card.appendChild(top);
+    card.appendChild(preview);
+
+    if (activeRuntimeId === variant.runtimeId) {
+      card.classList.add("is-active");
+    }
+
+    card.addEventListener("click", () => {
+      applyVariant(variant.runtimeId);
+    });
+
+    variantPreviewEntries.push({ canvas: preview, variant });
+    variantGrid.appendChild(card);
+  });
+
+  queueVariantPreviewRender();
+}
+
+function applyVariant(runtimeId) {
+  const match = getVariantMatch(runtimeId);
+  if (!match) {
+    return;
+  }
+
+  currentBaseInkId = match.entry.baseInkId;
+  selectedRuntimeByBaseInkId.set(match.entry.baseInkId, match.variant.runtimeId);
+  saveVariantSelections();
+  canvasController.setActiveInk(match.variant.runtimeId);
+}
+
+function activateBaseInk(baseInkId) {
+  const entry = getEntry(baseInkId);
+  if (!entry) {
+    return;
+  }
+
+  currentBaseInkId = baseInkId;
+  canvasController.setActiveInk(getSelectedRuntimeId(baseInkId) || entry.defaultRuntimeId);
+}
+
 function syncUi() {
   const state = getState();
+  syncInkSelectionFromCanvas();
   updateInkButtons();
   updateSelectedPreview();
   updateInkReadout();
+  updateViewButtons();
   updateModeButtons();
   updateBackgroundButtons();
   updateActionButtons();
   brushSizeInput.value = String(state.brushSize);
   brushValue.textContent = `${state.brushSize}px`;
 
-  if (state.activeInkId !== lastCenteredInkId && getEntry(state.activeInkId)) {
-    scrollInkIntoView(state.activeInkId, lastCenteredInkId ? "smooth" : "auto");
-    lastCenteredInkId = state.activeInkId;
+  if (currentBaseInkId !== lastCenteredBaseInkId && getEntry(currentBaseInkId)) {
+    scrollInkIntoView(currentBaseInkId, lastCenteredBaseInkId ? "smooth" : "auto");
+    lastCenteredBaseInkId = currentBaseInkId;
   }
+
+  if (currentViewMode === "variants") {
+    renderVariantSheet();
+  }
+
+  syncOverlayOffset();
 }
 
 function maybePlayRailHint() {
@@ -347,6 +538,10 @@ function handleProjectOpen() {
 }
 
 function handleWindowResize() {
+  if (currentViewMode === "variants") {
+    queueVariantPreviewRender();
+  }
+  syncOverlayOffset();
   maybePlayRailHint();
 }
 
@@ -369,18 +564,23 @@ function initializeSheetSwipeClose() {
 }
 
 function initialize() {
+  loadVariantSelections();
+  loadViewMode();
   updateControlIcons();
   buildInkPicker();
   buildBackgroundPicker();
 
-  canvasController.setActiveInk(DEFAULT_INK_ID);
+  const initialRuntimeId = getSelectedRuntimeId(DEFAULT_BASE_INK_ID) || getEntry(DEFAULT_BASE_INK_ID)?.defaultRuntimeId;
+  canvasController.setActiveInk(initialRuntimeId);
   canvasController.setMode("spray");
   canvasController.setExportBackground("transparent");
   canvasController.initialize();
 
   controlsToggle.addEventListener("click", toggleControls);
   controlsBackdrop.addEventListener("click", closeControls);
-  activeInkButton.addEventListener("click", () => scrollInkIntoView(getState().activeInkId));
+  activeInkButton.addEventListener("click", () => scrollInkIntoView(currentBaseInkId));
+  drawViewButton.addEventListener("click", () => setViewMode("draw"));
+  variantsViewButton.addEventListener("click", () => setViewMode("variants"));
   undoButton.addEventListener("click", () => canvasController.undoLastStroke());
   shareButton.addEventListener("click", () => exportController.shareGif());
   saveGifButton.addEventListener("click", () => exportController.exportGif());
@@ -401,12 +601,16 @@ function initialize() {
   window.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeControls();
+      if (currentViewMode === "variants") {
+        setViewMode("draw");
+      }
     }
   });
 
   initializeSheetSwipeClose();
   closeControls();
   syncUi();
+  setViewMode(currentViewMode);
 
   if (localStorage.getItem(INK_RAIL_HINT_KEY)) {
     hasPlayedRailHint = true;

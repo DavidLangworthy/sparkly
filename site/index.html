@@ -73,6 +73,7 @@
     }
 
     .stage-root {
+      --overlay-offset: 156px;
       position: relative;
       width: 100%;
       height: 100%;
@@ -99,6 +100,10 @@
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
+    }
+
+    .stage-viewport[hidden] {
+      display: none;
     }
 
     .stage-viewport::-webkit-scrollbar {
@@ -357,6 +362,175 @@
       background: linear-gradient(90deg, rgba(111, 70, 230, 0), rgba(111, 70, 230, 0.72), rgba(241, 120, 200, 0.65), rgba(102, 197, 255, 0.62), rgba(111, 70, 230, 0));
     }
 
+    .view-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      align-self: center;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 252, 255, 0.78);
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(14px);
+      pointer-events: auto;
+    }
+
+    .view-chip {
+      min-width: 88px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--muted);
+      transition: background 150ms ease, color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+    }
+
+    .view-chip:hover {
+      color: var(--ink);
+      transform: translateY(-1px);
+    }
+
+    .view-chip--active {
+      color: var(--plum);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(231, 225, 255, 0.94));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+    }
+
+    .variant-sheet {
+      position: absolute;
+      inset: var(--overlay-offset) 0 0 0;
+      z-index: 4;
+      overflow: auto;
+      padding:
+        0 max(12px, env(safe-area-inset-right, 0px))
+        max(18px, env(safe-area-inset-bottom, 0px))
+        max(12px, env(safe-area-inset-left, 0px));
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .variant-sheet[hidden] {
+      display: none;
+    }
+
+    .variant-sheet::-webkit-scrollbar {
+      display: none;
+    }
+
+    .variant-sheet__inner {
+      display: grid;
+      gap: 12px;
+      padding-bottom: 18px;
+    }
+
+    .variant-sheet__header {
+      display: grid;
+      gap: 4px;
+      padding: 2px 6px;
+    }
+
+    .variant-sheet__eyebrow {
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--plum) 82%, white);
+    }
+
+    .variant-sheet__header h2 {
+      margin: 0;
+      font-size: clamp(1.2rem, 2vw, 1.72rem);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .variant-sheet__header p {
+      margin: 0;
+      font-size: 0.94rem;
+      line-height: 1.35;
+      color: var(--muted);
+      max-width: 56rem;
+    }
+
+    .variant-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .variant-card {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+      padding: 14px;
+      border-radius: 24px;
+      border: 1px solid rgba(111, 70, 230, 0.12);
+      background: rgba(255, 252, 255, 0.84);
+      box-shadow: var(--shadow-md);
+      backdrop-filter: blur(18px);
+      text-align: left;
+      transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+    }
+
+    .variant-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(111, 70, 230, 0.22);
+    }
+
+    .variant-card.is-active {
+      border-color: rgba(111, 70, 230, 0.34);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 242, 255, 0.92));
+      box-shadow: 0 0 0 4px rgba(111, 70, 230, 0.1), var(--shadow-md);
+    }
+
+    .variant-card__top {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+    }
+
+    .variant-card__text {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .variant-card__title {
+      font-size: 1rem;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+
+    .variant-card__description {
+      margin: 0;
+      font-size: 0.92rem;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+
+    .variant-card__badge {
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      color: var(--plum);
+      background: rgba(111, 70, 230, 0.1);
+    }
+
+    .variant-card__preview {
+      width: 100%;
+      height: 116px;
+      display: block;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.8);
+    }
+
     .top-sheet {
       display: grid;
       gap: 10px;
@@ -540,6 +714,16 @@
         height: 56px;
       }
 
+      .view-switch {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .view-chip {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+
       .sheet-row {
         grid-template-columns: 1fr;
         gap: 10px;
@@ -548,12 +732,36 @@
       .sheet-row__icon {
         display: none;
       }
+
+      .variant-sheet {
+        padding-inline: max(10px, env(safe-area-inset-left, 0px));
+      }
+
+      .variant-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .variant-card {
+        padding: 12px;
+      }
+
+      .variant-card__top {
+        grid-template-columns: 1fr;
+      }
+
+      .variant-card__badge {
+        justify-self: start;
+      }
+
+      .variant-card__preview {
+        height: 102px;
+      }
     }
   </style>
 </head>
 <body>
   <main class="app">
-    <section class="stage-root">
+    <section class="stage-root" id="stageRoot">
       <div class="stage-viewport" id="stageViewport">
         <div class="canvas-shell" id="canvasShell">
           <canvas id="paintCanvas" aria-hidden="true"></canvas>
@@ -561,9 +769,20 @@
         </div>
       </div>
 
+      <section class="variant-sheet" id="variantSheet" hidden aria-label="Ink variants">
+        <div class="variant-sheet__inner">
+          <header class="variant-sheet__header">
+            <span class="variant-sheet__eyebrow">Test sheet</span>
+            <h2 id="variantSheetTitle">Rainbow Chrome Test Sheet</h2>
+            <p id="variantSheetNote">Pick a look, then hop back to Draw.</p>
+          </header>
+          <div class="variant-grid" id="variantGrid"></div>
+        </div>
+      </section>
+
       <button class="sheet-backdrop" id="controlsBackdrop" type="button" hidden aria-label="Close controls"></button>
 
-      <div class="top-overlay">
+      <div class="top-overlay" id="topOverlay">
         <div class="top-capsule">
           <button class="selected-ink" id="activeInkButton" type="button" aria-label="Selected ink">
             <img class="selected-ink__preview" id="activeInkPreview" src="./previews/rainbow-chrome.svg" alt="">
@@ -582,6 +801,11 @@
 
         <div class="ink-rail-shell">
           <div class="ink-strip" id="inkPicker" role="list" aria-label="Ink palette"></div>
+        </div>
+
+        <div class="view-switch" role="tablist" aria-label="Workspace view">
+          <button class="view-chip view-chip--active" id="drawViewButton" type="button" data-view="draw" role="tab" aria-selected="true">Draw</button>
+          <button class="view-chip" id="variantsViewButton" type="button" data-view="variants" role="tab" aria-selected="false">Variants</button>
         </div>
 
         <section class="top-sheet" id="controlsSheet" hidden aria-label="Controls">
