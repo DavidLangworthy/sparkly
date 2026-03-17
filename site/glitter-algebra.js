@@ -124,6 +124,38 @@ function normalizeSparkleColors(rawColors, fallbackColors) {
     .filter(Boolean);
 }
 
+function normalizeSparkleProfile(raw, fallback) {
+  const sparkleProfile = raw && typeof raw === "object" ? raw : {};
+  const sizeMin = clamp(toFiniteNumber(sparkleProfile.sizeMin, fallback.sizeMin), 0.4, 8);
+  const driftMin = clamp(toFiniteNumber(sparkleProfile.driftMin, fallback.driftMin), 0, 2);
+  const brightnessMin = clamp(toFiniteNumber(sparkleProfile.brightnessMin, fallback.brightnessMin), 0.1, 2);
+
+  return {
+    density: clamp(toFiniteNumber(sparkleProfile.density, fallback.density), 0, 0.14),
+    sizeMin,
+    sizeMax: clamp(toFiniteNumber(sparkleProfile.sizeMax, fallback.sizeMax), Math.max(0.8, sizeMin), 10),
+    hueRange: clamp(toFiniteNumber(sparkleProfile.hueRange, fallback.hueRange), 0, 360),
+    brightnessMin,
+    brightnessMax: clamp(toFiniteNumber(sparkleProfile.brightnessMax, fallback.brightnessMax), brightnessMin, 2),
+    driftMin,
+    driftMax: clamp(toFiniteNumber(sparkleProfile.driftMax, fallback.driftMax), driftMin, 2),
+    hotspotChance: clamp(toFiniteNumber(sparkleProfile.hotspotChance, fallback.hotspotChance), 0, 0.4),
+    hotspotBoost: clamp(toFiniteNumber(sparkleProfile.hotspotBoost, fallback.hotspotBoost), 1, 2.2)
+  };
+}
+
+function normalizeSparkleMotion(raw, fallback) {
+  const sparkleMotion = raw && typeof raw === "object" ? raw : {};
+
+  return {
+    hueOffsetScale: clamp(toFiniteNumber(sparkleMotion.hueOffsetScale, fallback.hueOffsetScale), 0, 2),
+    timeSinSpeed: clampTimeSpeed(sparkleMotion.timeSinSpeed, fallback.timeSinSpeed),
+    timeSinAmplitude: clampHueAmplitude(sparkleMotion.timeSinAmplitude, fallback.timeSinAmplitude),
+    timeCosSpeed: clampTimeSpeed(sparkleMotion.timeCosSpeed, fallback.timeCosSpeed),
+    timeCosAmplitude: clampHueAmplitude(sparkleMotion.timeCosAmplitude, fallback.timeCosAmplitude)
+  };
+}
+
 function normalizePaletteDefinition(raw) {
   const fallback = DEFAULT_PALETTE_RAW;
   const definition = raw && typeof raw === "object" ? raw : {};
@@ -133,11 +165,6 @@ function normalizePaletteDefinition(raw) {
   const bodyMotion = definition.bodyMotion && typeof definition.bodyMotion === "object" ? definition.bodyMotion : {};
   const shineMotion = definition.shineMotion && typeof definition.shineMotion === "object" ? definition.shineMotion : {};
   const rimMotion = definition.rimMotion && typeof definition.rimMotion === "object" ? definition.rimMotion : {};
-  const sparkleProfile = definition.sparkleProfile && typeof definition.sparkleProfile === "object" ? definition.sparkleProfile : {};
-  const sparkleMotion = definition.sparkleMotion && typeof definition.sparkleMotion === "object" ? definition.sparkleMotion : {};
-  const sizeMin = clamp(toFiniteNumber(sparkleProfile.sizeMin, fallback.sparkleProfile.sizeMin), 0.4, 8);
-  const driftMin = clamp(toFiniteNumber(sparkleProfile.driftMin, fallback.sparkleProfile.driftMin), 0, 2);
-  const brightnessMin = clamp(toFiniteNumber(sparkleProfile.brightnessMin, fallback.sparkleProfile.brightnessMin), 0.1, 2);
 
   return {
     meta: {
@@ -179,25 +206,6 @@ function normalizePaletteDefinition(raw) {
       progressFreq: clampFrequency(rimMotion.progressFreq, fallback.rimMotion.progressFreq),
       seedFreq: clampFrequency(rimMotion.seedFreq, fallback.rimMotion.seedFreq),
       amplitude: clampHueAmplitude(rimMotion.amplitude, fallback.rimMotion.amplitude)
-    },
-    sparkleProfile: {
-      density: clamp(toFiniteNumber(sparkleProfile.density, fallback.sparkleProfile.density), 0, 0.14),
-      sizeMin,
-      sizeMax: clamp(toFiniteNumber(sparkleProfile.sizeMax, fallback.sparkleProfile.sizeMax), Math.max(0.8, sizeMin), 10),
-      hueRange: clamp(toFiniteNumber(sparkleProfile.hueRange, fallback.sparkleProfile.hueRange), 0, 360),
-      brightnessMin,
-      brightnessMax: clamp(toFiniteNumber(sparkleProfile.brightnessMax, fallback.sparkleProfile.brightnessMax), brightnessMin, 2),
-      driftMin,
-      driftMax: clamp(toFiniteNumber(sparkleProfile.driftMax, fallback.sparkleProfile.driftMax), driftMin, 2),
-      hotspotChance: clamp(toFiniteNumber(sparkleProfile.hotspotChance, fallback.sparkleProfile.hotspotChance), 0, 0.4),
-      hotspotBoost: clamp(toFiniteNumber(sparkleProfile.hotspotBoost, fallback.sparkleProfile.hotspotBoost), 1, 2.2)
-    },
-    sparkleMotion: {
-      hueOffsetScale: clamp(toFiniteNumber(sparkleMotion.hueOffsetScale, fallback.sparkleMotion.hueOffsetScale), 0, 2),
-      timeSinSpeed: clampTimeSpeed(sparkleMotion.timeSinSpeed, fallback.sparkleMotion.timeSinSpeed),
-      timeSinAmplitude: clampHueAmplitude(sparkleMotion.timeSinAmplitude, fallback.sparkleMotion.timeSinAmplitude),
-      timeCosSpeed: clampTimeSpeed(sparkleMotion.timeCosSpeed, fallback.sparkleMotion.timeCosSpeed),
-      timeCosAmplitude: clampHueAmplitude(sparkleMotion.timeCosAmplitude, fallback.sparkleMotion.timeCosAmplitude)
     }
   };
 }
@@ -211,6 +219,8 @@ function normalizeInkDefinition(raw) {
   const rim = definition.rim && typeof definition.rim === "object" ? definition.rim : {};
   const shadow = definition.shadow && typeof definition.shadow === "object" ? definition.shadow : {};
   const sparkle = definition.sparkle && typeof definition.sparkle === "object" ? definition.sparkle : {};
+  const sparkleProfile = definition.sparkleProfile && typeof definition.sparkleProfile === "object" ? definition.sparkleProfile : {};
+  const sparkleMotion = definition.sparkleMotion && typeof definition.sparkleMotion === "object" ? definition.sparkleMotion : {};
 
   return {
     meta: {
@@ -246,7 +256,9 @@ function normalizeInkDefinition(raw) {
       lightnessBase: clampColorChannel(sparkle.lightnessBase, fallback.sparkle.lightnessBase),
       lightnessAmplitude: clampColorChannel(sparkle.lightnessAmplitude, fallback.sparkle.lightnessAmplitude),
       alpha: clampAlpha(sparkle.alpha, fallback.sparkle.alpha)
-    }
+    },
+    sparkleProfile: normalizeSparkleProfile(sparkleProfile, fallback.sparkleProfile),
+    sparkleMotion: normalizeSparkleMotion(sparkleMotion, fallback.sparkleMotion)
   };
 }
 
@@ -295,13 +307,13 @@ function fromPaletteInk({ palette, ink }) {
     sparkleColors: normalizedInk.sparkle.baseColors,
     blendMode: normalizedPalette.finish.blendMode,
     sheenSpeed: normalizedPalette.finish.sheenSpeed,
-    sparkleDensity: normalizedPalette.sparkleProfile.density,
-    sparkleSizeRange: [normalizedPalette.sparkleProfile.sizeMin, normalizedPalette.sparkleProfile.sizeMax],
-    sparkleHueRange: normalizedPalette.sparkleProfile.hueRange,
-    sparkleBrightnessRange: [normalizedPalette.sparkleProfile.brightnessMin, normalizedPalette.sparkleProfile.brightnessMax],
-    sparkleDriftRange: [normalizedPalette.sparkleProfile.driftMin, normalizedPalette.sparkleProfile.driftMax],
-    sparkleHotspotChance: normalizedPalette.sparkleProfile.hotspotChance,
-    sparkleHotspotBoost: normalizedPalette.sparkleProfile.hotspotBoost,
+    sparkleDensity: normalizedInk.sparkleProfile.density,
+    sparkleSizeRange: [normalizedInk.sparkleProfile.sizeMin, normalizedInk.sparkleProfile.sizeMax],
+    sparkleHueRange: normalizedInk.sparkleProfile.hueRange,
+    sparkleBrightnessRange: [normalizedInk.sparkleProfile.brightnessMin, normalizedInk.sparkleProfile.brightnessMax],
+    sparkleDriftRange: [normalizedInk.sparkleProfile.driftMin, normalizedInk.sparkleProfile.driftMax],
+    sparkleHotspotChance: normalizedInk.sparkleProfile.hotspotChance,
+    sparkleHotspotBoost: normalizedInk.sparkleProfile.hotspotBoost,
     sprayScatter: normalizedPalette.bodyProfile.sprayScatter,
     stretch: normalizedPalette.bodyProfile.stretch,
     squeeze: normalizedPalette.bodyProfile.squeeze,
@@ -329,9 +341,9 @@ function fromPaletteInk({ palette, ink }) {
     shadowColor: () => normalizedInk.shadow.color,
     sparkleColor: (node, time) => hsl(
       normalizedInk.sparkle.hueBase
-        + node.hueOffset * normalizedPalette.sparkleMotion.hueOffsetScale
-        + Math.sin(time * normalizedPalette.sparkleMotion.timeSinSpeed + node.phase) * normalizedPalette.sparkleMotion.timeSinAmplitude
-        + Math.cos(time * normalizedPalette.sparkleMotion.timeCosSpeed + node.drift * 3.8) * normalizedPalette.sparkleMotion.timeCosAmplitude,
+        + node.hueOffset * normalizedInk.sparkleMotion.hueOffsetScale
+        + Math.sin(time * normalizedInk.sparkleMotion.timeSinSpeed + node.phase) * normalizedInk.sparkleMotion.timeSinAmplitude
+        + Math.cos(time * normalizedInk.sparkleMotion.timeCosSpeed + node.drift * 3.8) * normalizedInk.sparkleMotion.timeCosAmplitude,
       normalizedInk.sparkle.saturationBase
         + Math.sin(node.phase * 2.1) * normalizedInk.sparkle.saturationAmplitude,
       normalizedInk.sparkle.lightnessBase

@@ -87,6 +87,32 @@ const PALETTE_CONTROL_DEFS = [
     min: 0,
     max: 1,
     step: 0.01
+  }
+];
+
+const PALETTE_ADVANCED_CONTROL_DEFS = [
+  { path: "bodyMotion.sinProgressFreq", label: "Wave A Progress Freq", caption: "How fast the first body wave changes along a stroke.", min: 0, max: 12, step: 0.01 },
+  { path: "bodyMotion.sinSeedFreq", label: "Wave A Seed Freq", caption: "How much the first body wave reacts to per-stroke seed.", min: 0, max: 12, step: 0.01 },
+  { path: "bodyMotion.sinAmplitude", label: "Wave A Width", caption: "How far the first body wave swings in hue.", min: 0, max: 120, step: 1 },
+  { path: "bodyMotion.cosProgressFreq", label: "Wave B Progress Freq", caption: "How fast the second body wave changes along a stroke.", min: 0, max: 12, step: 0.01 },
+  { path: "bodyMotion.cosSeedFreq", label: "Wave B Seed Freq", caption: "How much the second body wave reacts to per-stroke seed.", min: 0, max: 12, step: 0.01 },
+  { path: "bodyMotion.cosAmplitude", label: "Wave B Width", caption: "How far the second body wave swings in hue.", min: 0, max: 120, step: 1 },
+  { path: "shineMotion.progressFreq", label: "Shine Progress Freq", caption: "How fast shine changes along the stroke.", min: 0, max: 12, step: 0.01 },
+  { path: "shineMotion.seedFreq", label: "Shine Seed Freq", caption: "How much shine reacts to per-stroke seed.", min: 0, max: 12, step: 0.01 },
+  { path: "shineMotion.amplitude", label: "Shine Hue Swing", caption: "Hue travel of the shine layer.", min: 0, max: 120, step: 1 },
+  { path: "rimMotion.progressFreq", label: "Rim Progress Freq", caption: "How fast the rim changes along the stroke.", min: 0, max: 12, step: 0.01 },
+  { path: "rimMotion.seedFreq", label: "Rim Seed Freq", caption: "How much the rim reacts to per-stroke seed.", min: 0, max: 12, step: 0.01 },
+  { path: "rimMotion.amplitude", label: "Rim Hue Swing", caption: "Hue travel of the rim light.", min: 0, max: 120, step: 1 }
+];
+
+const INK_CONTROL_DEFS = [
+  {
+    path: "body.hueBase",
+    label: "Body Hue Base",
+    caption: "The main color center for the pigment body.",
+    min: 0,
+    max: 360,
+    step: 1
   },
   {
     path: "sparkleProfile.density",
@@ -130,42 +156,6 @@ const PALETTE_CONTROL_DEFS = [
   }
 ];
 
-const PALETTE_ADVANCED_CONTROL_DEFS = [
-  { path: "bodyMotion.sinProgressFreq", label: "Wave A Progress Freq", caption: "How fast the first body wave changes along a stroke.", min: 0, max: 12, step: 0.01 },
-  { path: "bodyMotion.sinSeedFreq", label: "Wave A Seed Freq", caption: "How much the first body wave reacts to per-stroke seed.", min: 0, max: 12, step: 0.01 },
-  { path: "bodyMotion.sinAmplitude", label: "Wave A Width", caption: "How far the first body wave swings in hue.", min: 0, max: 120, step: 1 },
-  { path: "bodyMotion.cosProgressFreq", label: "Wave B Progress Freq", caption: "How fast the second body wave changes along a stroke.", min: 0, max: 12, step: 0.01 },
-  { path: "bodyMotion.cosSeedFreq", label: "Wave B Seed Freq", caption: "How much the second body wave reacts to per-stroke seed.", min: 0, max: 12, step: 0.01 },
-  { path: "bodyMotion.cosAmplitude", label: "Wave B Width", caption: "How far the second body wave swings in hue.", min: 0, max: 120, step: 1 },
-  { path: "shineMotion.progressFreq", label: "Shine Progress Freq", caption: "How fast shine changes along the stroke.", min: 0, max: 12, step: 0.01 },
-  { path: "shineMotion.seedFreq", label: "Shine Seed Freq", caption: "How much shine reacts to per-stroke seed.", min: 0, max: 12, step: 0.01 },
-  { path: "shineMotion.amplitude", label: "Shine Hue Swing", caption: "Hue travel of the shine layer.", min: 0, max: 120, step: 1 },
-  { path: "rimMotion.progressFreq", label: "Rim Progress Freq", caption: "How fast the rim changes along the stroke.", min: 0, max: 12, step: 0.01 },
-  { path: "rimMotion.seedFreq", label: "Rim Seed Freq", caption: "How much the rim reacts to per-stroke seed.", min: 0, max: 12, step: 0.01 },
-  { path: "rimMotion.amplitude", label: "Rim Hue Swing", caption: "Hue travel of the rim light.", min: 0, max: 120, step: 1 },
-  { path: "sparkleProfile.hueRange", label: "Sparkle Hue Range", caption: "How wide sparkle hue offsets can spread.", min: 0, max: 360, step: 1 },
-  { path: "sparkleProfile.brightnessMin", label: "Brightness Min", caption: "The dimmest sparkle brightness.", min: 0.1, max: 2, step: 0.01 },
-  { path: "sparkleProfile.brightnessMax", label: "Brightness Max", caption: "The brightest sparkle brightness.", min: 0.1, max: 2, step: 0.01 },
-  { path: "sparkleProfile.hotspotChance", label: "Hotspot Chance", caption: "How often a sparkle gets an extra brightness boost.", min: 0, max: 0.4, step: 0.01 },
-  { path: "sparkleProfile.hotspotBoost", label: "Hotspot Boost", caption: "The multiplier for hotspot sparkles.", min: 1, max: 2.2, step: 0.01 },
-  { path: "sparkleMotion.hueOffsetScale", label: "Hue Offset Scale", caption: "How much each sparkle reacts to its hue offset.", min: 0, max: 2, step: 0.01 },
-  { path: "sparkleMotion.timeSinSpeed", label: "Sin Speed", caption: "How fast the first sparkle hue swing animates.", min: 0, max: 0.01, step: 0.0001 },
-  { path: "sparkleMotion.timeSinAmplitude", label: "Sin Swing", caption: "The first time-based hue swing in the sparkles.", min: 0, max: 120, step: 1 },
-  { path: "sparkleMotion.timeCosSpeed", label: "Cos Speed", caption: "How fast the second sparkle hue swing animates.", min: 0, max: 0.01, step: 0.0001 },
-  { path: "sparkleMotion.timeCosAmplitude", label: "Cos Swing", caption: "The second time-based hue swing in the sparkles.", min: 0, max: 120, step: 1 }
-];
-
-const INK_CONTROL_DEFS = [
-  {
-    path: "body.hueBase",
-    label: "Body Hue Base",
-    caption: "The main color center for the pigment body.",
-    min: 0,
-    max: 360,
-    step: 1
-  }
-];
-
 const INK_ADVANCED_CONTROL_DEFS = [
   { path: "shine.hueBase", label: "Shine Hue Base", caption: "Base hue for the top sheen.", min: 0, max: 360, step: 1 },
   { path: "shine.saturation", label: "Shine Saturation", caption: "Color intensity of the shine layer.", min: 0, max: 100, step: 1 },
@@ -180,7 +170,17 @@ const INK_ADVANCED_CONTROL_DEFS = [
   { path: "sparkle.saturationAmplitude", label: "Saturation Swing", caption: "How much sparkle saturation pulses.", min: 0, max: 100, step: 1 },
   { path: "sparkle.lightnessBase", label: "Sparkle Lightness", caption: "How bright the sparkles feel at rest.", min: 0, max: 100, step: 1 },
   { path: "sparkle.lightnessAmplitude", label: "Lightness Swing", caption: "How much sparkle brightness pulses.", min: 0, max: 100, step: 1 },
-  { path: "sparkle.alpha", label: "Sparkle Alpha", caption: "The overall opacity of glints.", min: 0, max: 1, step: 0.01 }
+  { path: "sparkle.alpha", label: "Sparkle Alpha", caption: "The overall opacity of glints.", min: 0, max: 1, step: 0.01 },
+  { path: "sparkleProfile.hueRange", label: "Sparkle Hue Range", caption: "How wide sparkle hue offsets can spread.", min: 0, max: 360, step: 1 },
+  { path: "sparkleProfile.brightnessMin", label: "Brightness Min", caption: "The dimmest sparkle brightness.", min: 0.1, max: 2, step: 0.01 },
+  { path: "sparkleProfile.brightnessMax", label: "Brightness Max", caption: "The brightest sparkle brightness.", min: 0.1, max: 2, step: 0.01 },
+  { path: "sparkleProfile.hotspotChance", label: "Hotspot Chance", caption: "How often a sparkle gets an extra brightness boost.", min: 0, max: 0.4, step: 0.01 },
+  { path: "sparkleProfile.hotspotBoost", label: "Hotspot Boost", caption: "The multiplier for hotspot sparkles.", min: 1, max: 2.2, step: 0.01 },
+  { path: "sparkleMotion.hueOffsetScale", label: "Hue Offset Scale", caption: "How much each sparkle reacts to its hue offset.", min: 0, max: 2, step: 0.01 },
+  { path: "sparkleMotion.timeSinSpeed", label: "Sin Speed", caption: "How fast the first sparkle hue swing animates.", min: 0, max: 0.01, step: 0.0001 },
+  { path: "sparkleMotion.timeSinAmplitude", label: "Sin Swing", caption: "The first time-based hue swing in the sparkles.", min: 0, max: 120, step: 1 },
+  { path: "sparkleMotion.timeCosSpeed", label: "Cos Speed", caption: "How fast the second sparkle hue swing animates.", min: 0, max: 0.01, step: 0.0001 },
+  { path: "sparkleMotion.timeCosAmplitude", label: "Cos Swing", caption: "The second time-based hue swing in the sparkles.", min: 0, max: 120, step: 1 }
 ];
 
 const dom = {
@@ -564,6 +564,23 @@ function getWorkspaceInkIds(workspace, paletteId) {
   return result;
 }
 
+function mergeLegacyPaletteSparkleIntoInk(palette, ink) {
+  const sourcePalette = palette && typeof palette === "object" ? palette : {};
+  const sourceInk = ink && typeof ink === "object" ? ink : {};
+
+  return {
+    ...sourceInk,
+    sparkleProfile: {
+      ...(sourcePalette.sparkleProfile && typeof sourcePalette.sparkleProfile === "object" ? sourcePalette.sparkleProfile : {}),
+      ...(sourceInk.sparkleProfile && typeof sourceInk.sparkleProfile === "object" ? sourceInk.sparkleProfile : {})
+    },
+    sparkleMotion: {
+      ...(sourcePalette.sparkleMotion && typeof sourcePalette.sparkleMotion === "object" ? sourcePalette.sparkleMotion : {}),
+      ...(sourceInk.sparkleMotion && typeof sourceInk.sparkleMotion === "object" ? sourceInk.sparkleMotion : {})
+    }
+  };
+}
+
 function normalizeWorkspaceState(raw) {
   const workspace = createSeedWorkspace();
   const source = raw && typeof raw === "object" ? raw : {};
@@ -580,7 +597,8 @@ function normalizeWorkspaceState(raw) {
   });
 
   Object.values(rawInks).forEach((ink) => {
-    const normalized = normalizeInkDefinition(ink);
+    const palette = rawPalettes[ink?.meta?.paletteId];
+    const normalized = normalizeInkDefinition(mergeLegacyPaletteSparkleIntoInk(palette, ink));
     workspace.inks[normalized.meta.id] = normalized;
     if (!workspace.palettes[normalized.meta.paletteId]) {
       workspace.palettes[normalized.meta.paletteId] = normalizePaletteDefinition({
@@ -662,7 +680,7 @@ function normalizeWorkspaceState(raw) {
 function addPairToWorkspace(target, pair, { select = true } = {}) {
   const palette = normalizePaletteDefinition(pair.palette);
   const ink = normalizeInkDefinition({
-    ...pair.ink,
+    ...mergeLegacyPaletteSparkleIntoInk(pair.palette, pair.ink),
     meta: {
       ...(pair.ink?.meta || {}),
       paletteId: palette.meta.id
@@ -708,7 +726,7 @@ function makeCustomPair(pair, workspace) {
       }
     }),
     ink: normalizeInkDefinition({
-      ...pair.ink,
+      ...mergeLegacyPaletteSparkleIntoInk(pair.palette, pair.ink),
       meta: {
         ...(pair.ink.meta || {}),
         id: inkId,
@@ -922,7 +940,7 @@ function loadPairBundle(bundle, statusMessage, { persist = true, forceCustom = f
   if (bundle && typeof bundle === "object" && bundle.schemaVersion === 2 && bundle.palette && bundle.ink) {
     pair = {
       palette: normalizePaletteDefinition(bundle.palette),
-      ink: normalizeInkDefinition(bundle.ink)
+      ink: normalizeInkDefinition(mergeLegacyPaletteSparkleIntoInk(bundle.palette, bundle.ink))
     };
   } else {
     pair = upgradeLegacyRecipeToPaletteInk(bundle);

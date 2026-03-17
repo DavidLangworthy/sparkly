@@ -17,6 +17,9 @@ const DEFAULT_LEGACY_PRESET_RECIPE = toLegacyPresetRecipe({
 });
 
 function toLegacyPresetRecipe({ palette, ink }) {
+  const sparkleProfile = ink.sparkleProfile || palette.sparkleProfile;
+  const sparkleMotion = ink.sparkleMotion || palette.sparkleMotion;
+
   return {
     meta: {
       id: ink.meta.id,
@@ -69,24 +72,24 @@ function toLegacyPresetRecipe({ palette, ink }) {
     },
     sparkle: {
       baseColors: ink.sparkle.baseColors,
-      density: palette.sparkleProfile.density,
-      sizeMin: palette.sparkleProfile.sizeMin,
-      sizeMax: palette.sparkleProfile.sizeMax,
-      hueRange: palette.sparkleProfile.hueRange,
-      brightnessMin: palette.sparkleProfile.brightnessMin,
-      brightnessMax: palette.sparkleProfile.brightnessMax,
-      driftMin: palette.sparkleProfile.driftMin,
-      driftMax: palette.sparkleProfile.driftMax,
-      hotspotChance: palette.sparkleProfile.hotspotChance,
-      hotspotBoost: palette.sparkleProfile.hotspotBoost
+      density: sparkleProfile.density,
+      sizeMin: sparkleProfile.sizeMin,
+      sizeMax: sparkleProfile.sizeMax,
+      hueRange: sparkleProfile.hueRange,
+      brightnessMin: sparkleProfile.brightnessMin,
+      brightnessMax: sparkleProfile.brightnessMax,
+      driftMin: sparkleProfile.driftMin,
+      driftMax: sparkleProfile.driftMax,
+      hotspotChance: sparkleProfile.hotspotChance,
+      hotspotBoost: sparkleProfile.hotspotBoost
     },
     sparkleMotion: {
       hueBase: ink.sparkle.hueBase,
-      hueOffsetScale: palette.sparkleMotion.hueOffsetScale,
-      timeSinSpeed: palette.sparkleMotion.timeSinSpeed,
-      timeSinAmplitude: palette.sparkleMotion.timeSinAmplitude,
-      timeCosSpeed: palette.sparkleMotion.timeCosSpeed,
-      timeCosAmplitude: palette.sparkleMotion.timeCosAmplitude,
+      hueOffsetScale: sparkleMotion.hueOffsetScale,
+      timeSinSpeed: sparkleMotion.timeSinSpeed,
+      timeSinAmplitude: sparkleMotion.timeSinAmplitude,
+      timeCosSpeed: sparkleMotion.timeCosSpeed,
+      timeCosAmplitude: sparkleMotion.timeCosAmplitude,
       saturationBase: ink.sparkle.saturationBase,
       saturationAmplitude: ink.sparkle.saturationAmplitude,
       lightnessBase: ink.sparkle.lightnessBase,
@@ -332,25 +335,6 @@ function upgradeLegacyRecipeToPaletteInk(recipe) {
         progressFreq: normalized.rim.progressFreq,
         seedFreq: normalized.rim.seedFreq,
         amplitude: normalized.rim.amplitude
-      },
-      sparkleProfile: {
-        density: normalized.sparkle.density,
-        sizeMin: normalized.sparkle.sizeMin,
-        sizeMax: normalized.sparkle.sizeMax,
-        hueRange: normalized.sparkle.hueRange,
-        brightnessMin: normalized.sparkle.brightnessMin,
-        brightnessMax: normalized.sparkle.brightnessMax,
-        driftMin: normalized.sparkle.driftMin,
-        driftMax: normalized.sparkle.driftMax,
-        hotspotChance: normalized.sparkle.hotspotChance,
-        hotspotBoost: normalized.sparkle.hotspotBoost
-      },
-      sparkleMotion: {
-        hueOffsetScale: normalized.sparkleMotion.hueOffsetScale,
-        timeSinSpeed: normalized.sparkleMotion.timeSinSpeed,
-        timeSinAmplitude: normalized.sparkleMotion.timeSinAmplitude,
-        timeCosSpeed: normalized.sparkleMotion.timeCosSpeed,
-        timeCosAmplitude: normalized.sparkleMotion.timeCosAmplitude
       }
     }),
     ink: normalizeInkDefinition({
@@ -387,6 +371,25 @@ function upgradeLegacyRecipeToPaletteInk(recipe) {
         lightnessBase: normalized.sparkleMotion.lightnessBase,
         lightnessAmplitude: normalized.sparkleMotion.lightnessAmplitude,
         alpha: normalized.sparkleMotion.alpha
+      },
+      sparkleProfile: {
+        density: normalized.sparkle.density,
+        sizeMin: normalized.sparkle.sizeMin,
+        sizeMax: normalized.sparkle.sizeMax,
+        hueRange: normalized.sparkle.hueRange,
+        brightnessMin: normalized.sparkle.brightnessMin,
+        brightnessMax: normalized.sparkle.brightnessMax,
+        driftMin: normalized.sparkle.driftMin,
+        driftMax: normalized.sparkle.driftMax,
+        hotspotChance: normalized.sparkle.hotspotChance,
+        hotspotBoost: normalized.sparkle.hotspotBoost
+      },
+      sparkleMotion: {
+        hueOffsetScale: normalized.sparkleMotion.hueOffsetScale,
+        timeSinSpeed: normalized.sparkleMotion.timeSinSpeed,
+        timeSinAmplitude: normalized.sparkleMotion.timeSinAmplitude,
+        timeCosSpeed: normalized.sparkleMotion.timeCosSpeed,
+        timeCosAmplitude: normalized.sparkleMotion.timeCosAmplitude
       }
     })
   };
