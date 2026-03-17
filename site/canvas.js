@@ -10,11 +10,16 @@ import {
 } from "./ink.js";
 
 const MIN_SCENE_DIMENSION = 320;
-const MAX_SCENE_DIMENSION = 4096;
+const MAX_SCENE_DIMENSION = 8192;
 const MIN_VIEW_SCALE = 0.5;
 const MAX_VIEW_SCALE = 2.5;
 
-function createCanvasController({ elements, onUiChange = () => {} }) {
+function createCanvasController({
+  elements,
+  onUiChange = () => {},
+  transparentPreviewColor = null,
+  navigationGrowth = null
+}) {
   const {
     stageViewport,
     canvasShell,
@@ -60,6 +65,27 @@ function createCanvasController({ elements, onUiChange = () => {} }) {
   };
 
   let initialized = false;
+
+  function getNavigationGrowthConfig() {
+    if (!navigationGrowth || !navigationGrowth.enabled) {
+      return null;
+    }
+
+    return {
+      initialViewportMultiplier: Number.isFinite(navigationGrowth.initialViewportMultiplier)
+        ? navigationGrowth.initialViewportMultiplier
+        : 2.2,
+      edgeThresholdPx: Number.isFinite(navigationGrowth.edgeThresholdPx)
+        ? navigationGrowth.edgeThresholdPx
+        : 180,
+      chunkWidth: Number.isFinite(navigationGrowth.chunkWidth)
+        ? navigationGrowth.chunkWidth
+        : 960,
+      chunkHeight: Number.isFinite(navigationGrowth.chunkHeight)
+        ? navigationGrowth.chunkHeight
+        : 720
+    };
+  }
 
   function notifyUiChange() {
     onUiChange(state);
@@ -111,6 +137,13 @@ function createCanvasController({ elements, onUiChange = () => {} }) {
 
   function updateCanvasBackground() {
     const background = getExportBackground();
+    if (!background.color && transparentPreviewColor) {
+      canvasShell.style.background = transparentPreviewColor;
+      canvasShell.style.backgroundSize = "auto";
+      canvasShell.style.backgroundPosition = "0 0";
+      return;
+    }
+
     canvasShell.style.background = background.color
       ? background.color
       : "linear-gradient(45deg, rgba(126, 112, 96, 0.18) 25%, transparent 25%, transparent 75%, rgba(126, 112, 96, 0.18) 75%), linear-gradient(45deg, rgba(126, 112, 96, 0.18) 25%, transparent 25%, transparent 75%, rgba(126, 112, 96, 0.18) 75%), rgba(255, 255, 255, 0.92)";
@@ -293,6 +326,95 @@ function createCanvasController({ elements, onUiChange = () => {} }) {
     }
   }
 
+  function translateStroke(stroke, deltaX, deltaY) {
+    if (!stroke) {
+      return;
+    }
+
+    stroke.points.forEach((point) => {
+      point.x += deltaX;
+      point.y += deltaY;
+    });
+    stroke.sparkleNodes.forEach((node) => {
+      node.x += deltaX;
+      node.y += deltaY;
+    });
+  }
+
+  function growSceneForNavigation(addLeft, addRight, addTop, addBottom) {
+    if (!addLeft && !addRight && !addTop && !addBottom) {
+      return false;
+    }
+
+    const oldWidth = state.sceneWidth;
+    const oldHeight = state.sceneHeight;
+    const nextWidth = clampSceneDimension(oldWidth + addLeft + addRight, oldWidth);
+    const nextHeight = clampSceneDimension(oldHeight + addTop + addBottom, oldHeight);
+    const widthGrowth = nextWidth - oldWidth;
+    const heightGrowth = nextHeight - oldHeight;
+
+    if (!widthGrowth && !heightGrowth) {
+      return false;
+    }
+
+    const actualLeft = addLeft
+      ? (addRight ? Math.min(addLeft, Math.round(widthGrowth * (addLeft / (addLeft + addRight)))) : widthGrowth)
+      : 0;
+    const actualTop = addTop
+      ? (addBottom ? Math.min(addTop, Math.round(heightGrowth * (addTop / (addTop + addBottom)))) : heightGrowth)
+      : 0;
+    const oldScrollLeft = stageViewport.scrollLeft;
+    const oldScrollTop = stageViewport.scrollTop;
+
+    if (actualLeft || actualTop) {
+      state.strokes.forEach((stroke) => translateStroke(stroke, actualLeft, actualTop));
+      translateStroke(state.activeStroke, actualLeft, actualTop);
+      if (navigationGesture.isActive) {
+        navigationGesture.anchorSceneX += actualLeft;
+        navigationGesture.anchorSceneY += actualTop;
+      }
+    }
+
+    state.sceneWidth = nextWidth;
+    state.sceneHeight = nextHeight;
+    configureCanvas(paintCanvas, paintCtx, nextWidth, nextHeight);
+    configureCanvas(fxCanvas, fxCtx, nextWidth, nextHeight);
+    syncCanvasDisplaySize();
+    syncCanvasSizeInputs();
+    redrawPaint();
+
+    stageViewport.scrollLeft = oldScrollLeft + Math.round(actualLeft * state.viewScale);
+    stageViewport.scrollTop = oldScrollTop + Math.round(actualTop * state.viewScale);
+
+    if (panGesture.isActive) {
+      panGesture.startScrollLeft += Math.round(actualLeft * state.viewScale);
+      panGesture.startScrollTop += Math.round(actualTop * state.viewScale);
+    }
+
+    notifyUiChange();
+    return true;
+  }
+
+  function maybeGrowSceneForNavigation() {
+    const growth = getNavigationGrowthConfig();
+    if (!growth || !state.sceneWidth || !state.sceneHeight) {
+      return false;
+    }
+
+    const thresholdPx = Math.max(96, growth.edgeThresholdPx);
+    const leftGap = stageViewport.scrollLeft;
+    const topGap = stageViewport.scrollTop;
+    const rightGap = canvasShell.offsetWidth - (stageViewport.scrollLeft + stageViewport.clientWidth);
+    const bottomGap = canvasShell.offsetHeight - (stageViewport.scrollTop + stageViewport.clientHeight);
+
+    const addLeft = leftGap < thresholdPx ? growth.chunkWidth : 0;
+    const addTop = topGap < thresholdPx ? growth.chunkHeight : 0;
+    const addRight = rightGap < thresholdPx ? growth.chunkWidth : 0;
+    const addBottom = bottomGap < thresholdPx ? growth.chunkHeight : 0;
+
+    return growSceneForNavigation(addLeft, addRight, addTop, addBottom);
+  }
+
   function applySceneSize(nextWidth, nextHeight, preserveView = true) {
     if (state.isDrawing) {
       finishActiveStroke(true);
@@ -324,8 +446,17 @@ function createCanvasController({ elements, onUiChange = () => {} }) {
   }
 
   function initializeStage() {
-    const width = clampSceneDimension(stageViewport.clientWidth - 36, 960);
-    const height = clampSceneDimension(stageViewport.clientHeight - 36, 720);
+    const growth = getNavigationGrowthConfig();
+    const baseWidth = Math.max(320, stageViewport.clientWidth - 36);
+    const baseHeight = Math.max(320, stageViewport.clientHeight - 36);
+    const width = clampSceneDimension(
+      growth ? baseWidth * growth.initialViewportMultiplier : baseWidth,
+      960
+    );
+    const height = clampSceneDimension(
+      growth ? baseHeight * growth.initialViewportMultiplier : baseHeight,
+      720
+    );
     applySceneSize(width, height, false);
   }
 
@@ -830,6 +961,7 @@ function createCanvasController({ elements, onUiChange = () => {} }) {
     event.preventDefault();
     stageViewport.scrollLeft = panGesture.startScrollLeft - (event.clientX - panGesture.startClientX);
     stageViewport.scrollTop = panGesture.startScrollTop - (event.clientY - panGesture.startClientY);
+    maybeGrowSceneForNavigation();
     return true;
   }
 
@@ -865,6 +997,7 @@ function createCanvasController({ elements, onUiChange = () => {} }) {
       center.y,
       { x: navigationGesture.anchorSceneX, y: navigationGesture.anchorSceneY }
     );
+    maybeGrowSceneForNavigation();
   }
 
   function handlePointerDown(event) {
@@ -961,6 +1094,7 @@ function createCanvasController({ elements, onUiChange = () => {} }) {
 
     event.preventDefault();
     setViewScale(state.viewScale * Math.exp(-event.deltaY * 0.002), event.clientX, event.clientY);
+    maybeGrowSceneForNavigation();
   }
 
   function handleWindowKeyDown(event) {
