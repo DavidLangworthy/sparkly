@@ -9,9 +9,9 @@ const ICON_PATHS = {
     <path d="m7 8 5-5 5 5"/>
   `,
   download: `
-    <path d="M12 3v12"/>
+    <path d="M12 15V3"/>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
     <path d="m7 10 5 5 5-5"/>
-    <path d="M5 21h14"/>
   `,
   sliders: `
     <line x1="4" x2="20" y1="6" y2="6"/>
