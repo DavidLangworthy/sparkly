@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ink Audit</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: ui-rounded, "SF Pro Rounded", "Avenir Next Rounded", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
+      background: #ffffff;
+      color: #231a39;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #fffefb 0%, #f4efff 100%);
+    }
+
+    main {
+      display: grid;
+      gap: 18px;
+      padding: 18px;
+    }
+
+    .group {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(111, 70, 230, 0.12);
+      box-shadow: 0 14px 30px rgba(77, 48, 140, 0.08);
+    }
+
+    .group h2 {
+      margin: 0;
+      font-size: 1.4rem;
+      letter-spacing: -0.03em;
+    }
+
+    .group p {
+      margin: 0;
+      font-size: 0.94rem;
+      color: rgba(55, 43, 84, 0.72);
+    }
+
+    .variants {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+
+    .variant {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid rgba(111, 70, 230, 0.1);
+    }
+
+    .variant strong {
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .variant span {
+      font-size: 0.88rem;
+      line-height: 1.3;
+      color: rgba(55, 43, 84, 0.72);
+    }
+
+    .variant canvas {
+      width: 100%;
+      height: 118px;
+      display: block;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.94);
+    }
+  </style>
+</head>
+<body>
+  <main id="app"></main>
+  <script type="module">
+    import { inkById } from "./ink.js";
+    import { buildParameterizedInkCatalog } from "./ink-variants.js";
+    import { drawInkSwoopPreview } from "./ink-preview.js";
+
+    const { entries } = buildParameterizedInkCatalog(inkById);
+    const app = document.getElementById("app");
+
+    entries.forEach((entry) => {
+      const section = document.createElement("section");
+      const title = document.createElement("h2");
+      const note = document.createElement("p");
+      const variants = document.createElement("div");
+
+      section.className = "group";
+      title.textContent = entry.label;
+      note.textContent = entry.note;
+      variants.className = "variants";
+
+      entry.variants.forEach((variant, index) => {
+        const card = document.createElement("div");
+        const heading = document.createElement("strong");
+        const description = document.createElement("span");
+        const canvas = document.createElement("canvas");
+
+        card.className = "variant";
+        heading.textContent = variant.label;
+        description.textContent = variant.description;
+        card.appendChild(heading);
+        card.appendChild(description);
+        card.appendChild(canvas);
+        variants.appendChild(card);
+
+        requestAnimationFrame(() => {
+          drawInkSwoopPreview(canvas, variant.preset, {
+            active: index === 0,
+            timeMs: 2400 + index * 180
+          });
+        });
+      });
+
+      section.appendChild(title);
+      section.appendChild(note);
+      section.appendChild(variants);
+      app.appendChild(section);
+    });
+  </script>
+</body>
+</html>

@@ -26,6 +26,8 @@ const activeInkButton = document.getElementById("activeInkButton");
 const activeInkPreview = document.getElementById("activeInkPreview");
 const activeInkName = document.getElementById("activeInkName");
 const activeInkMeta = document.getElementById("activeInkMeta");
+const activeModeBadge = document.getElementById("activeModeBadge");
+const activeModeIconHost = document.getElementById("activeModeIconHost");
 const inkPicker = document.getElementById("inkPicker");
 const drawViewButton = document.getElementById("drawViewButton");
 const variantsViewButton = document.getElementById("variantsViewButton");
@@ -33,6 +35,7 @@ const variantSheet = document.getElementById("variantSheet");
 const variantSheetTitle = document.getElementById("variantSheetTitle");
 const variantSheetNote = document.getElementById("variantSheetNote");
 const variantGrid = document.getElementById("variantGrid");
+const backToDrawButton = document.getElementById("backToDrawButton");
 const backgroundPicker = document.getElementById("backgroundPicker");
 const brushSizeInput = document.getElementById("brushSize");
 const brushValue = document.getElementById("brushValue");
@@ -87,7 +90,11 @@ let sheetTouchStartY = null;
 let lastCenteredBaseInkId = null;
 let lastVariantSheetKey = "";
 let variantPreviewQueueId = 0;
+let variantPreviewAnimationId = 0;
 let variantPreviewEntries = [];
+let railPreviewEntries = [];
+let inkPreviewQueueId = 0;
+let lastInkPreviewKey = "";
 let overlaySyncId = 0;
 
 function getState() {
@@ -177,8 +184,23 @@ function markRailHintSeen() {
 function syncOverlayOffset() {
   cancelAnimationFrame(overlaySyncId);
   overlaySyncId = requestAnimationFrame(() => {
-    const rect = topOverlay.getBoundingClientRect();
-    stageRoot.style.setProperty("--overlay-offset", `${Math.ceil(rect.height + 12)}px`);
+    const stageRect = stageRoot.getBoundingClientRect();
+    let bottom = stageRect.top;
+
+    Array.from(topOverlay.children).forEach((child) => {
+      if (!(child instanceof HTMLElement) || child.hidden) {
+        return;
+      }
+
+      const rect = child.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) {
+        return;
+      }
+
+      bottom = Math.max(bottom, rect.bottom);
+    });
+
+    stageRoot.style.setProperty("--overlay-offset", `${Math.ceil(bottom - stageRect.top + 12)}px`);
   });
 }
 
@@ -219,18 +241,23 @@ function setViewMode(nextMode) {
   }
 
   currentViewMode = nextMode;
+  stageRoot.classList.toggle("is-variants", nextMode === "variants");
   stageViewport.hidden = nextMode === "variants";
   variantSheet.hidden = nextMode !== "variants";
   saveViewMode();
+  updateModeChrome();
   updateViewButtons();
+  updateActionButtons();
 
   if (currentViewMode === "variants") {
     renderVariantSheet();
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        queueVariantPreviewRender();
+        startVariantPreviewAnimation();
       });
     });
+  } else {
+    stopVariantPreviewAnimation();
   }
 
   syncOverlayOffset();
@@ -240,6 +267,7 @@ function updateControlIcons() {
   undoButton.innerHTML = renderIcon("undo");
   shareButton.innerHTML = renderIcon("share");
   controlsToggle.innerHTML = renderIcon("sliders");
+  activeModeIconHost.innerHTML = renderIcon("palette", { size: 14 });
   brushModeButton.innerHTML = renderIcon("brush");
   sprayModeButton.innerHTML = renderIcon("spray");
   saveGifButton.innerHTML = renderIcon("download");
@@ -253,12 +281,25 @@ function updateControlIcons() {
   document.getElementById("actionsIconHost").innerHTML = renderIcon("sliders");
 }
 
+function updateModeChrome() {
+  const isVariants = currentViewMode === "variants";
+  activeModeBadge.hidden = !isVariants;
+  backToDrawButton.hidden = !isVariants;
+  undoButton.setAttribute("aria-hidden", isVariants ? "true" : "false");
+  shareButton.setAttribute("aria-hidden", isVariants ? "true" : "false");
+}
+
+function getSelectedVariantPreset(baseInkId = currentBaseInkId) {
+  return getSelectedVariant(baseInkId)?.preset || null;
+}
+
 function buildInkPicker() {
   const fragment = document.createDocumentFragment();
+  railPreviewEntries = [];
 
   inkEntries.forEach((entry) => {
     const button = document.createElement("button");
-    const image = document.createElement("img");
+    const preview = document.createElement("canvas");
 
     button.type = "button";
     button.className = "ink-option";
@@ -267,18 +308,15 @@ function buildInkPicker() {
     button.title = entry.label;
     button.dataset.baseInkId = entry.baseInkId;
 
-    image.className = "ink-option__preview";
-    image.src = entry.previewSrc;
-    image.alt = "";
-    image.decoding = "async";
-    image.loading = "lazy";
-    image.draggable = false;
+    preview.className = "ink-option__preview";
+    preview.setAttribute("aria-hidden", "true");
 
-    button.appendChild(image);
+    button.appendChild(preview);
     button.addEventListener("click", () => {
       markRailHintSeen();
       activateBaseInk(entry.baseInkId);
     });
+    railPreviewEntries.push({ canvas: preview, baseInkId: entry.baseInkId });
     fragment.appendChild(button);
   });
 
@@ -307,14 +345,7 @@ function buildBackgroundPicker() {
 }
 
 function updateSelectedPreview() {
-  const entry = getEntry(currentBaseInkId);
-  if (!entry) {
-    return;
-  }
-
-  if (activeInkPreview.getAttribute("src") !== entry.previewSrc) {
-    activeInkPreview.setAttribute("src", entry.previewSrc);
-  }
+  queueInkPreviewRender();
 }
 
 function scrollInkIntoView(baseInkId, behavior = "smooth") {
@@ -344,6 +375,12 @@ function updateInkReadout() {
   activeInkMeta.textContent = variant
     ? `${variant.label} · ${variant.description}`
     : entry?.note || "";
+  activeInkButton.title = currentViewMode === "variants"
+    ? "Return to drawing"
+    : "Open variant sheet";
+  activeInkButton.setAttribute("aria-label", currentViewMode === "variants"
+    ? "Return to drawing"
+    : "Open variant sheet");
 }
 
 function updateViewButtons() {
@@ -377,9 +414,10 @@ function updateActionButtons() {
   const isSharing = state.exportingKind === "share-gif";
   const isSavingGif = state.exportingKind === "gif";
   const isExporting = Boolean(state.exportingKind);
+  const isVariants = currentViewMode === "variants";
 
-  undoButton.disabled = !hasCommitted;
-  shareButton.disabled = !hasAnything || isExporting;
+  undoButton.disabled = isVariants || !hasCommitted;
+  shareButton.disabled = isVariants || !hasAnything || isExporting;
   saveGifButton.disabled = !hasAnything || isExporting;
   clearButton.disabled = !hasAnything;
   saveProjectButton.disabled = !hasAnything || isExporting;
@@ -388,29 +426,102 @@ function updateActionButtons() {
   saveGifButton.classList.toggle("is-busy", isSavingGif);
 }
 
-function queueVariantPreviewRender(attempt = 0) {
-  cancelAnimationFrame(variantPreviewQueueId);
-  variantPreviewQueueId = requestAnimationFrame(() => {
-    if (currentViewMode !== "variants") {
-      return;
-    }
+function renderVariantPreviews(timeMs = 1120, attempt = 0) {
+  if (currentViewMode !== "variants") {
+    return;
+  }
 
-    const hasRealCanvasSize = variantPreviewEntries.every(({ canvas }) => {
-      const rect = canvas.getBoundingClientRect();
-      return rect.width >= 40 && rect.height >= 40;
+  const hasRealCanvasSize = variantPreviewEntries.every(({ canvas }) => {
+    const rect = canvas.getBoundingClientRect();
+    return rect.width >= 40 && rect.height >= 40;
+  });
+
+  if (!hasRealCanvasSize) {
+    if (attempt < 6) {
+      cancelAnimationFrame(variantPreviewQueueId);
+      variantPreviewQueueId = requestAnimationFrame(() => {
+        renderVariantPreviews(timeMs, attempt + 1);
+      });
+    }
+    return;
+  }
+
+  const activeRuntimeId = getSelectedRuntimeId(currentBaseInkId);
+  variantPreviewEntries.forEach(({ canvas, variant }) => {
+    drawInkSwoopPreview(canvas, variant.preset, {
+      active: activeRuntimeId === variant.runtimeId,
+      timeMs
     });
+  });
+}
 
-    if (!hasRealCanvasSize && attempt < 6) {
-      queueVariantPreviewRender(attempt + 1);
+function stopVariantPreviewAnimation() {
+  cancelAnimationFrame(variantPreviewQueueId);
+  cancelAnimationFrame(variantPreviewAnimationId);
+  variantPreviewQueueId = 0;
+  variantPreviewAnimationId = 0;
+}
+
+function startVariantPreviewAnimation() {
+  stopVariantPreviewAnimation();
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    renderVariantPreviews(1120);
+    return;
+  }
+
+  const loop = (timeMs) => {
+    if (currentViewMode !== "variants") {
+      variantPreviewAnimationId = 0;
       return;
     }
 
-    const activeRuntimeId = getSelectedRuntimeId(currentBaseInkId);
-    variantPreviewEntries.forEach(({ canvas, variant }) => {
-      drawInkSwoopPreview(canvas, variant.preset, {
-        active: activeRuntimeId === variant.runtimeId
+    renderVariantPreviews(timeMs);
+    variantPreviewAnimationId = requestAnimationFrame(loop);
+  };
+
+  variantPreviewAnimationId = requestAnimationFrame(loop);
+}
+
+function queueInkPreviewRender(force = false, attempt = 0) {
+  const nextKey = `${currentBaseInkId}:${inkEntries.map((entry) => getSelectedRuntimeId(entry.baseInkId)).join("|")}`;
+  if (!force && nextKey === lastInkPreviewKey) {
+    return;
+  }
+
+  cancelAnimationFrame(inkPreviewQueueId);
+  inkPreviewQueueId = requestAnimationFrame(() => {
+    const selectedRect = activeInkPreview.getBoundingClientRect();
+    const hasRailSize = railPreviewEntries.every(({ canvas }) => {
+      const rect = canvas.getBoundingClientRect();
+      return rect.width >= 40 && rect.height >= 24;
+    });
+    const hasSelectedSize = selectedRect.width >= 28 && selectedRect.height >= 18;
+
+    if ((!hasRailSize || !hasSelectedSize) && attempt < 6) {
+      queueInkPreviewRender(force, attempt + 1);
+      return;
+    }
+
+    railPreviewEntries.forEach(({ canvas, baseInkId }) => {
+      const preset = getSelectedVariantPreset(baseInkId);
+      if (!preset) {
+        return;
+      }
+
+      drawInkSwoopPreview(canvas, preset, {
+        active: baseInkId === currentBaseInkId
       });
     });
+
+    const selectedPreset = getSelectedVariantPreset(currentBaseInkId);
+    if (selectedPreset) {
+      drawInkSwoopPreview(activeInkPreview, selectedPreset, {
+        compact: true
+      });
+    }
+
+    lastInkPreviewKey = nextKey;
   });
 }
 
@@ -424,7 +535,7 @@ function renderVariantSheet() {
   }
 
   if (lastVariantSheetKey === nextKey && currentViewMode === "variants") {
-    queueVariantPreviewRender();
+    renderVariantPreviews(performance.now());
     return;
   }
 
@@ -479,7 +590,7 @@ function renderVariantSheet() {
     variantGrid.appendChild(card);
   });
 
-  queueVariantPreviewRender();
+  renderVariantPreviews(performance.now());
 }
 
 function applyVariant(runtimeId) {
@@ -522,6 +633,8 @@ function syncUi() {
     lastCenteredBaseInkId = currentBaseInkId;
   }
 
+  queueInkPreviewRender();
+
   if (currentViewMode === "variants") {
     renderVariantSheet();
   }
@@ -558,8 +671,10 @@ function handleProjectOpen() {
 }
 
 function handleWindowResize() {
+  lastInkPreviewKey = "";
+  queueInkPreviewRender(true);
   if (currentViewMode === "variants") {
-    queueVariantPreviewRender();
+    renderVariantPreviews(performance.now());
   }
   syncOverlayOffset();
   maybePlayRailHint();
@@ -598,9 +713,28 @@ function initialize() {
 
   controlsToggle.addEventListener("click", toggleControls);
   controlsBackdrop.addEventListener("click", closeControls);
-  activeInkButton.addEventListener("click", () => scrollInkIntoView(currentBaseInkId));
-  drawViewButton.addEventListener("click", () => setViewMode("draw"));
-  variantsViewButton.addEventListener("click", () => setViewMode("variants"));
+  activeInkButton.addEventListener("click", () => {
+    if (currentViewMode === "variants") {
+      setViewMode("draw");
+      scrollInkIntoView(currentBaseInkId);
+      return;
+    }
+
+    closeControls();
+    setViewMode("variants");
+  });
+  backToDrawButton.addEventListener("click", () => {
+    setViewMode("draw");
+    scrollInkIntoView(currentBaseInkId);
+  });
+  drawViewButton.addEventListener("click", () => {
+    closeControls();
+    setViewMode("draw");
+  });
+  variantsViewButton.addEventListener("click", () => {
+    closeControls();
+    setViewMode("variants");
+  });
   undoButton.addEventListener("click", () => canvasController.undoLastStroke());
   shareButton.addEventListener("click", () => exportController.shareGif());
   saveGifButton.addEventListener("click", () => exportController.exportGif());

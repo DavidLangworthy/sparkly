@@ -83,6 +83,13 @@
         linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0));
     }
 
+    .stage-root.is-variants {
+      background:
+        radial-gradient(circle at 22% 12%, rgba(255, 255, 255, 0.7), transparent 28%),
+        radial-gradient(circle at 78% 16%, rgba(241, 120, 200, 0.16), transparent 26%),
+        linear-gradient(180deg, rgba(250, 244, 255, 0.92), rgba(241, 235, 255, 0.78));
+    }
+
     .stage-root::after {
       content: "";
       position: absolute;
@@ -183,6 +190,12 @@
       backdrop-filter: blur(18px);
     }
 
+    .stage-root.is-variants .top-capsule {
+      border-color: rgba(111, 70, 230, 0.22);
+      background: linear-gradient(180deg, rgba(255, 249, 255, 0.95), rgba(244, 237, 255, 0.9));
+      box-shadow: 0 18px 42px rgba(111, 70, 230, 0.18);
+    }
+
     .selected-ink {
       min-width: 0;
       display: grid;
@@ -209,6 +222,32 @@
       text-align: left;
     }
 
+    .selected-ink__mode {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      justify-self: start;
+      margin-bottom: 2px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(111, 70, 230, 0.18);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(240, 232, 255, 0.94));
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--plum);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .selected-ink__mode[hidden] {
+      display: none;
+    }
+
+    .selected-ink__mode .ui-icon {
+      opacity: 0.92;
+    }
+
     .selected-ink__text strong {
       font-size: 1rem;
       line-height: 1.05;
@@ -230,6 +269,31 @@
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+
+    .capsule-pill {
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(111, 70, 230, 0.18);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(238, 230, 255, 0.95));
+      box-shadow: var(--shadow-sm);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--plum);
+      letter-spacing: -0.01em;
+      transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+    }
+
+    .capsule-pill[hidden] {
+      display: none;
+    }
+
+    .capsule-pill:hover {
+      transform: translateY(-1px);
     }
 
     .icon-button,
@@ -264,6 +328,14 @@
     .icon-button--primary {
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(231, 225, 255, 0.92));
       color: var(--plum);
+    }
+
+    .icon-button--draw-only {
+      transition: opacity 150ms ease, transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease, background 150ms ease, color 150ms ease;
+    }
+
+    .stage-root.is-variants .icon-button--draw-only {
+      opacity: 0.42;
     }
 
     .icon-button.is-busy,
@@ -407,6 +479,10 @@
         max(12px, env(safe-area-inset-left, 0px));
       scrollbar-width: none;
       -webkit-overflow-scrolling: touch;
+    }
+
+    .stage-root.is-variants .variant-sheet {
+      background: linear-gradient(180deg, rgba(248, 242, 255, 0.76), rgba(248, 242, 255, 0.32) 18%, rgba(248, 242, 255, 0) 44%);
     }
 
     .variant-sheet[hidden] {
@@ -778,16 +854,21 @@
       <div class="top-overlay" id="topOverlay">
         <div class="top-capsule">
           <button class="selected-ink" id="activeInkButton" type="button" aria-label="Selected ink">
-            <img class="selected-ink__preview" id="activeInkPreview" src="./previews/rainbow-chrome.svg" alt="">
+            <canvas class="selected-ink__preview" id="activeInkPreview" aria-hidden="true"></canvas>
             <span class="selected-ink__text">
+              <span class="selected-ink__mode" id="activeModeBadge" hidden>
+                <span id="activeModeIconHost"></span>
+                <span>Variants</span>
+              </span>
               <strong id="activeInkName">Rainbow Chrome</strong>
               <span id="activeInkMeta">A shifting chrome ribbon with prismatic sparkles and rotating color flips.</span>
             </span>
           </button>
 
           <div class="capsule-actions">
-            <button class="icon-button" id="undoButton" type="button" title="Undo" aria-label="Undo"></button>
-            <button class="icon-button icon-button--primary" id="shareButton" type="button" title="Share GIF" aria-label="Share GIF"></button>
+            <button class="capsule-pill" id="backToDrawButton" type="button" hidden>Back to Draw</button>
+            <button class="icon-button icon-button--draw-only" id="undoButton" type="button" title="Undo" aria-label="Undo"></button>
+            <button class="icon-button icon-button--primary icon-button--draw-only" id="shareButton" type="button" title="Share GIF" aria-label="Share GIF"></button>
             <button class="icon-button" id="controlsToggle" type="button" title="Show controls" aria-label="Show controls" aria-expanded="false"></button>
           </div>
         </div>

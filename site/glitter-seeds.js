@@ -29,23 +29,23 @@ const sparkleProfiles = {
     sizeMax: 5.35,
     hueRange: 236,
     brightnessMin: 0.62,
-    brightnessMax: 1.68,
+    brightnessMax: 1.74,
     driftMin: 0.22,
     driftMax: 1.22,
-    hotspotChance: 0.12,
-    hotspotBoost: 1.58
+    hotspotChance: 0.13,
+    hotspotBoost: 1.62
   },
   silver: {
     density: 0.069,
     sizeMin: 1.7,
     sizeMax: 5.4,
     hueRange: 278,
-    brightnessMin: 0.62,
-    brightnessMax: 1.7,
+    brightnessMin: 0.64,
+    brightnessMax: 1.94,
     driftMin: 0.22,
     driftMax: 1.22,
-    hotspotChance: 0.12,
-    hotspotBoost: 1.6
+    hotspotChance: 0.17,
+    hotspotBoost: 1.8
   },
   rose: {
     density: 0.066,
@@ -53,11 +53,11 @@ const sparkleProfiles = {
     sizeMax: 5.25,
     hueRange: 224,
     brightnessMin: 0.62,
-    brightnessMax: 1.68,
+    brightnessMax: 1.74,
     driftMin: 0.21,
     driftMax: 1.18,
-    hotspotChance: 0.1,
-    hotspotBoost: 1.52
+    hotspotChance: 0.12,
+    hotspotBoost: 1.58
   },
   pearl: {
     density: 0.078,
@@ -65,11 +65,11 @@ const sparkleProfiles = {
     sizeMax: 5.7,
     hueRange: 312,
     brightnessMin: 0.7,
-    brightnessMax: 1.78,
+    brightnessMax: 1.74,
     driftMin: 0.24,
     driftMax: 1.28,
-    hotspotChance: 0.14,
-    hotspotBoost: 1.62
+    hotspotChance: 0.13,
+    hotspotBoost: 1.56
   },
   opal: {
     density: 0.071,
@@ -77,11 +77,11 @@ const sparkleProfiles = {
     sizeMax: 5.8,
     hueRange: 320,
     brightnessMin: 0.56,
-    brightnessMax: 1.5,
+    brightnessMax: 1.76,
     driftMin: 0.2,
     driftMax: 1.16,
-    hotspotChance: 0.08,
-    hotspotBoost: 1.34
+    hotspotChance: 0.16,
+    hotspotBoost: 1.52
   },
   galaxy: {
     density: 0.085,
@@ -89,11 +89,11 @@ const sparkleProfiles = {
     sizeMax: 5.8,
     hueRange: 320,
     brightnessMin: 0.55,
-    brightnessMax: 1.3,
+    brightnessMax: 1.36,
     driftMin: 0.18,
     driftMax: 1.12,
-    hotspotChance: 0,
-    hotspotBoost: 1
+    hotspotChance: 0.04,
+    hotspotBoost: 1.14
   },
   ember: {
     density: 0.072,
@@ -101,11 +101,11 @@ const sparkleProfiles = {
     sizeMax: 5.1,
     hueRange: 180,
     brightnessMin: 0.58,
-    brightnessMax: 1.42,
+    brightnessMax: 1.5,
     driftMin: 0.18,
     driftMax: 1.12,
-    hotspotChance: 0,
-    hotspotBoost: 1
+    hotspotChance: 0.05,
+    hotspotBoost: 1.16
   }
 };
 
@@ -125,18 +125,18 @@ const sparkleMotions = {
     timeCosAmplitude: 14
   },
   gold: {
-    hueOffsetScale: 0.24,
+    hueOffsetScale: 0.16,
     timeSinSpeed: 0.0013,
-    timeSinAmplitude: 28,
+    timeSinAmplitude: 20,
     timeCosSpeed: 0.0009,
-    timeCosAmplitude: 12
+    timeCosAmplitude: 8
   },
   silver: {
     hueOffsetScale: 0.36,
     timeSinSpeed: 0.00125,
-    timeSinAmplitude: 34,
+    timeSinAmplitude: 28,
     timeCosSpeed: 0.00095,
-    timeCosAmplitude: 16
+    timeCosAmplitude: 12
   },
   rose: {
     hueOffsetScale: 0.22,
@@ -146,18 +146,18 @@ const sparkleMotions = {
     timeCosAmplitude: 10
   },
   pearl: {
-    hueOffsetScale: 0.36,
+    hueOffsetScale: 0.3,
     timeSinSpeed: 0.00115,
-    timeSinAmplitude: 92,
+    timeSinAmplitude: 64,
     timeCosSpeed: 0.0007,
-    timeCosAmplitude: 28
+    timeCosAmplitude: 18
   },
   opal: {
-    hueOffsetScale: 0.44,
+    hueOffsetScale: 0.52,
     timeSinSpeed: 0.00115,
-    timeSinAmplitude: 102,
+    timeSinAmplitude: 128,
     timeCosSpeed: 0.0008,
-    timeCosAmplitude: 34
+    timeCosAmplitude: 46
   },
   galaxy: {
     hueOffsetScale: 0.34,
@@ -297,35 +297,35 @@ const paletteSeedDefinitions = [
       note: "Soft milky behavior with opaline interference and restrained prism flashes."
     },
     finish: {
-      blendMode: "lighter",
+      blendMode: "screen",
       glintStyle: "prism",
-      sheenSpeed: 0.86
+      sheenSpeed: 0.82
     },
     bodyProfile: {
       stretch: 1.14,
       squeeze: 0.9,
       sprayScatter: 16,
-      pigmentAlpha: 0.74,
-      highlightAlpha: 0.36,
-      edgeAlpha: 0.16
+      pigmentAlpha: 0.76,
+      highlightAlpha: 0.34,
+      edgeAlpha: 0.14
     },
     bodyMotion: {
-      sinProgressFreq: 1.5,
+      sinProgressFreq: 1.42,
       sinSeedFreq: 7.2,
-      sinAmplitude: 34,
+      sinAmplitude: 24,
       cosProgressFreq: 0.32,
       cosSeedFreq: 2.8,
-      cosAmplitude: 10
+      cosAmplitude: 8
     },
     shineMotion: {
-      progressFreq: 1.1,
+      progressFreq: 1.06,
       seedFreq: 4.2,
-      amplitude: 26
+      amplitude: 18
     },
     rimMotion: {
       progressFreq: 0.9,
       seedFreq: 4.1,
-      amplitude: 18
+      amplitude: 12
     }
   },
   {
@@ -335,35 +335,35 @@ const paletteSeedDefinitions = [
       note: "Luminous opal behavior with pastel body color and brighter prism fire."
     },
     finish: {
-      blendMode: "screen",
+      blendMode: "lighter",
       glintStyle: "prism",
-      sheenSpeed: 0.92
+      sheenSpeed: 0.98
     },
     bodyProfile: {
       stretch: 1.16,
       squeeze: 0.86,
       sprayScatter: 19,
-      pigmentAlpha: 0.78,
-      highlightAlpha: 0.36,
-      edgeAlpha: 0.16
+      pigmentAlpha: 0.8,
+      highlightAlpha: 0.4,
+      edgeAlpha: 0.18
     },
     bodyMotion: {
       sinProgressFreq: 1.45,
       sinSeedFreq: 8.6,
-      sinAmplitude: 42,
+      sinAmplitude: 54,
       cosProgressFreq: 0.3,
       cosSeedFreq: 2.3,
-      cosAmplitude: 12
+      cosAmplitude: 16
     },
     shineMotion: {
       progressFreq: 1.08,
       seedFreq: 3.8,
-      amplitude: 28
+      amplitude: 34
     },
     rimMotion: {
       progressFreq: 0.9,
       seedFreq: 4.1,
-      amplitude: 24
+      amplitude: 30
     }
   },
   {
@@ -565,16 +565,17 @@ const inkSeedDefinitions = [
     },
     sparkle: {
       baseColors: [
-        "rgba(255,238,194,0.96)",
-        "rgba(255,209,88,0.94)",
-        "rgba(222,255,120,0.88)",
-        "rgba(255,184,82,0.9)"
+        "rgba(255,240,200,0.96)",
+        "rgba(255,211,94,0.94)",
+        "rgba(242,255,164,0.86)",
+        "rgba(255,184,82,0.9)",
+        "rgba(255,248,228,0.94)"
       ],
-      hueBase: 48,
-      saturationBase: 88,
-      saturationAmplitude: 26,
-      lightnessBase: 66,
-      lightnessAmplitude: 14,
+      hueBase: 46,
+      saturationBase: 84,
+      saturationAmplitude: 22,
+      lightnessBase: 68,
+      lightnessAmplitude: 15,
       alpha: 0.96
     },
     sparkleProfile: sparkleProfiles.gold,
@@ -585,49 +586,60 @@ const inkSeedDefinitions = [
       id: "silver",
       paletteId: "metallicFoil",
       label: "Metallic Silver",
-      note: "Layered steel foil with icy cyan-lilac flashes and brighter mirror cuts."
+      note: "Mirror-steel silver with icy blue-lilac flashes and brighter reflective cuts."
     },
     glintBlendMode: "source-over",
     body: {
       hueBase: 214,
       paletteStops: [
-        { hueShift: -36, saturation: 34, lightness: 10, alpha: 0.96 },
-        { hueShift: -10, saturation: 28, lightness: 28, alpha: 0.94 },
-        { hueShift: 18, saturation: 32, lightness: 62, alpha: 0.9 },
-        { hueShift: 46, saturation: 62, lightness: 94, alpha: 0.88 }
+        { hueShift: -24, saturation: 22, lightness: 24, alpha: 0.96 },
+        { hueShift: -4, saturation: 16, lightness: 56, alpha: 0.94 },
+        { hueShift: 20, saturation: 20, lightness: 84, alpha: 0.9 },
+        { hueShift: 42, saturation: 38, lightness: 98, alpha: 0.88 }
       ]
     },
     shine: {
       hueBase: 216,
-      saturation: 64,
-      lightness: 97,
+      saturation: 40,
+      lightness: 100,
       alpha: 0.94
     },
     rim: {
       hueBase: 242,
-      saturation: 56,
-      lightness: 88,
+      saturation: 40,
+      lightness: 93,
       alpha: 0.34
     },
     shadow: {
-      color: "rgba(56, 66, 82, 0.2)"
+      color: "rgba(56, 66, 82, 0.16)"
     },
     sparkle: {
       baseColors: [
-        "rgba(230,243,255,0.94)",
-        "rgba(170,214,255,0.92)",
-        "rgba(196,187,255,0.9)",
-        "rgba(171,245,255,0.88)"
+        "rgba(255,255,255,0.98)",
+        "rgba(214,236,255,0.94)",
+        "rgba(220,213,255,0.9)",
+        "rgba(214,248,255,0.9)",
+        "rgba(245,248,255,0.96)"
       ],
-      hueBase: 224,
-      saturationBase: 72,
-      saturationAmplitude: 28,
-      lightnessBase: 68,
-      lightnessAmplitude: 16,
+      hueBase: 222,
+      saturationBase: 56,
+      saturationAmplitude: 18,
+      lightnessBase: 80,
+      lightnessAmplitude: 18,
       alpha: 0.95
     },
-    sparkleProfile: sparkleProfiles.silver,
-    sparkleMotion: sparkleMotions.silver
+    sparkleProfile: {
+      ...sparkleProfiles.silver,
+      brightnessMin: 0.66,
+      brightnessMax: 2.06,
+      hotspotChance: 0.2,
+      hotspotBoost: 1.86
+    },
+    sparkleMotion: {
+      ...sparkleMotions.silver,
+      timeSinAmplitude: 26,
+      timeCosAmplitude: 10
+    }
   },
   {
     meta: {
@@ -666,16 +678,21 @@ const inkSeedDefinitions = [
         "rgba(255,229,220,0.95)",
         "rgba(255,170,186,0.9)",
         "rgba(255,214,160,0.88)",
-        "rgba(255,196,138,0.9)"
+        "rgba(255,196,138,0.9)",
+        "rgba(255,244,236,0.94)"
       ],
       hueBase: 12,
-      saturationBase: 84,
+      saturationBase: 80,
       saturationAmplitude: 24,
-      lightnessBase: 70,
-      lightnessAmplitude: 14,
+      lightnessBase: 72,
+      lightnessAmplitude: 16,
       alpha: 0.95
     },
-    sparkleProfile: sparkleProfiles.rose,
+    sparkleProfile: {
+      ...sparkleProfiles.rose,
+      brightnessMax: 1.78,
+      hotspotChance: 0.13
+    },
     sparkleMotion: sparkleMotions.rose
   },
   {
@@ -683,98 +700,121 @@ const inkSeedDefinitions = [
       id: "pearl",
       paletteId: "pearlIridescence",
       label: "Pearl Mist",
-      note: "Milky pearl with mint-lilac interference and brighter opaline flashes."
+      note: "Shell-white pearl with mint-lilac nacre and soft sugary star flashes."
     },
     glintBlendMode: "source-over",
     body: {
       hueBase: 206,
       paletteStops: [
-        { hueShift: -112, saturation: 24, lightness: 38, alpha: 0.74 },
-        { hueShift: -24, saturation: 34, lightness: 68, alpha: 0.82 },
-        { hueShift: 62, saturation: 42, lightness: 88, alpha: 0.86 },
-        { hueShift: 124, saturation: 62, lightness: 96, alpha: 0.88 }
+        { hueShift: -112, saturation: 18, lightness: 42, alpha: 0.76 },
+        { hueShift: -24, saturation: 22, lightness: 74, alpha: 0.82 },
+        { hueShift: 52, saturation: 30, lightness: 90, alpha: 0.86 },
+        { hueShift: 112, saturation: 40, lightness: 98, alpha: 0.88 }
       ]
     },
     shine: {
-      hueBase: 208,
-      saturation: 54,
-      lightness: 97,
+      hueBase: 204,
+      saturation: 30,
+      lightness: 98,
       alpha: 0.9
     },
     rim: {
-      hueBase: 318,
-      saturation: 42,
-      lightness: 90,
-      alpha: 0.28
+      hueBase: 324,
+      saturation: 28,
+      lightness: 92,
+      alpha: 0.24
     },
     shadow: {
       color: "rgba(120, 112, 128, 0.12)"
     },
     sparkle: {
       baseColors: [
-        "rgba(243,236,255,0.94)",
-        "rgba(186,249,233,0.88)",
-        "rgba(255,210,236,0.88)",
-        "rgba(214,239,255,0.9)"
+        "rgba(255,250,247,0.94)",
+        "rgba(224,251,243,0.9)",
+        "rgba(242,228,255,0.9)",
+        "rgba(255,233,240,0.88)",
+        "rgba(255,255,255,0.94)"
       ],
-      hueBase: 226,
-      saturationBase: 70,
-      saturationAmplitude: 30,
-      lightnessBase: 76,
-      lightnessAmplitude: 16,
+      hueBase: 212,
+      saturationBase: 54,
+      saturationAmplitude: 20,
+      lightnessBase: 83,
+      lightnessAmplitude: 13,
       alpha: 0.94
     },
-    sparkleProfile: sparkleProfiles.pearl,
-    sparkleMotion: sparkleMotions.pearl
+    sparkleProfile: {
+      ...sparkleProfiles.pearl,
+      hueRange: 268,
+      brightnessMax: 1.74,
+      hotspotChance: 0.13,
+      hotspotBoost: 1.56
+    },
+    sparkleMotion: {
+      ...sparkleMotions.pearl,
+      hueOffsetScale: 0.28,
+      timeSinAmplitude: 58,
+      timeCosAmplitude: 18
+    }
   },
   {
     meta: {
       id: "opal",
       paletteId: "opalPrism",
       label: "Opal Veil",
-      note: "Pale aqua-lilac pigment with peach fire and drifting opalescent flashes."
+      note: "Luminous opal with aqua-lilac body color and richer peach-citron fire."
     },
     glintBlendMode: "source-over",
     body: {
       hueBase: 162,
       paletteStops: [
-        { hueShift: -26, saturation: 60, lightness: 46, alpha: 0.8 },
-        { hueShift: 100, saturation: 70, lightness: 72, alpha: 0.84 },
-        { hueShift: 168, saturation: 90, lightness: 90, alpha: 0.9 },
-        { hueShift: 208, saturation: 86, lightness: 80, alpha: 0.86 }
+        { hueShift: -34, saturation: 72, lightness: 36, alpha: 0.82 },
+        { hueShift: 92, saturation: 78, lightness: 62, alpha: 0.86 },
+        { hueShift: 160, saturation: 96, lightness: 86, alpha: 0.9 },
+        { hueShift: 208, saturation: 92, lightness: 78, alpha: 0.86 }
       ]
     },
     shine: {
       hueBase: 176,
-      saturation: 88,
-      lightness: 93,
+      saturation: 96,
+      lightness: 94,
       alpha: 0.9
     },
     rim: {
-      hueBase: 304,
-      saturation: 78,
+      hueBase: 24,
+      saturation: 82,
       lightness: 88,
       alpha: 0.3
     },
     shadow: {
-      color: "rgba(105, 145, 150, 0.1)"
+      color: "rgba(118, 146, 126, 0.1)"
     },
     sparkle: {
       baseColors: [
-        "rgba(208,255,238,0.92)",
-        "rgba(207,214,255,0.92)",
-        "rgba(255,208,244,0.9)",
-        "rgba(255,232,156,0.88)"
+        "rgba(255,240,178,0.94)",
+        "rgba(255,196,148,0.92)",
+        "rgba(208,255,237,0.92)",
+        "rgba(230,213,255,0.92)",
+        "rgba(255,246,204,0.92)"
       ],
-      hueBase: 170,
-      saturationBase: 90,
-      saturationAmplitude: 22,
-      lightnessBase: 74,
-      lightnessAmplitude: 14,
+      hueBase: 152,
+      saturationBase: 98,
+      saturationAmplitude: 30,
+      lightnessBase: 72,
+      lightnessAmplitude: 18,
       alpha: 0.94
     },
-    sparkleProfile: sparkleProfiles.opal,
-    sparkleMotion: sparkleMotions.opal
+    sparkleProfile: {
+      ...sparkleProfiles.opal,
+      brightnessMax: 1.8,
+      hotspotChance: 0.17,
+      hotspotBoost: 1.56
+    },
+    sparkleMotion: {
+      ...sparkleMotions.opal,
+      hueOffsetScale: 0.54,
+      timeSinAmplitude: 132,
+      timeCosAmplitude: 48
+    }
   },
   {
     meta: {
@@ -811,13 +851,14 @@ const inkSeedDefinitions = [
       baseColors: [
         "rgba(232,239,255,0.96)",
         "rgba(150,224,255,0.92)",
-        "rgba(255,194,254,0.88)"
+        "rgba(255,194,254,0.88)",
+        "rgba(181,255,164,0.84)"
       ],
       hueBase: 205,
-      saturationBase: 100,
-      saturationAmplitude: 0,
-      lightnessBase: 80,
-      lightnessAmplitude: 0,
+      saturationBase: 96,
+      saturationAmplitude: 10,
+      lightnessBase: 78,
+      lightnessAmplitude: 8,
       alpha: 0.94
     },
     sparkleProfile: sparkleProfiles.galaxy,
@@ -859,13 +900,14 @@ const inkSeedDefinitions = [
         "rgba(255,244,193,0.96)",
         "rgba(255,188,84,0.95)",
         "rgba(255,123,62,0.92)",
-        "rgba(255,154,136,0.9)"
+        "rgba(255,154,136,0.9)",
+        "rgba(255,188,212,0.84)"
       ],
       hueBase: 22,
-      saturationBase: 100,
-      saturationAmplitude: 0,
-      lightnessBase: 74,
-      lightnessAmplitude: 0,
+      saturationBase: 96,
+      saturationAmplitude: 8,
+      lightnessBase: 72,
+      lightnessAmplitude: 6,
       alpha: 0.95
     },
     sparkleProfile: sparkleProfiles.ember,

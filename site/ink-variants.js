@@ -128,7 +128,7 @@ const VARIANT_DEFINITIONS = {
     {
       id: "studio",
       label: "Studio Pop",
-      description: "Balanced gold foil with lime-champagne sparkle and colored metallic twinkles."
+      description: "Balanced gold foil with champagne-citron sparkle and a few playful colored twinkles."
     },
     {
       id: "og-glitz",
@@ -180,8 +180,9 @@ const VARIANT_DEFINITIONS = {
           lightnessAmplitude: 15
         },
         sparkleMotion: {
-          timeSinAmplitude: 102,
-          timeCosAmplitude: 32
+          hueOffsetScale: 0.34,
+          timeSinAmplitude: 112,
+          timeCosAmplitude: 36
         }
       }
     }
@@ -190,39 +191,40 @@ const VARIANT_DEFINITIONS = {
     {
       id: "studio",
       label: "Studio Steel",
-      description: "Current smoky-steel silver with colored icy flashes and a darker foil body."
+      description: "Mirror-steel silver with cleaner metal shine, icy blue sparkle, and a few white mirror cuts."
     },
     {
       id: "bright-steel",
       label: "Bright Steel",
       description: "A lighter silver ribbon with crisp white cuts and cool blue-lilac sparkle without going full white-hot.",
       inkPatch: {
+        glintBlendMode: "lighter",
         body: {
           paletteStops: [
-            { hueShift: -28, saturation: 24, lightness: 16, alpha: 0.96 },
-            { hueShift: -8, saturation: 20, lightness: 38, alpha: 0.94 },
-            { hueShift: 20, saturation: 24, lightness: 74, alpha: 0.9 },
-            { hueShift: 48, saturation: 54, lightness: 97, alpha: 0.88 }
+            { hueShift: -22, saturation: 16, lightness: 30, alpha: 0.96 },
+            { hueShift: -2, saturation: 14, lightness: 60, alpha: 0.94 },
+            { hueShift: 22, saturation: 20, lightness: 88, alpha: 0.9 },
+            { hueShift: 48, saturation: 36, lightness: 100, alpha: 0.88 }
           ]
         },
         sparkle: {
           baseColors: [
-            "rgba(247,249,255,0.97)",
-            "rgba(188,226,255,0.92)",
-            "rgba(207,199,255,0.9)",
-            "rgba(214,255,250,0.88)"
+            "rgba(255,255,255,0.98)",
+            "rgba(226,240,255,0.94)",
+            "rgba(220,214,255,0.9)",
+            "rgba(228,255,252,0.88)"
           ],
           hueBase: 222,
-          saturationBase: 62,
-          saturationAmplitude: 22,
-          lightnessBase: 74,
-          lightnessAmplitude: 14
+          saturationBase: 46,
+          saturationAmplitude: 14,
+          lightnessBase: 82,
+          lightnessAmplitude: 18
         },
         sparkleProfile: {
-          brightnessMin: 0.68,
-          brightnessMax: 1.82,
-          hotspotChance: 0.15,
-          hotspotBoost: 1.68
+          brightnessMin: 0.7,
+          brightnessMax: 1.98,
+          hotspotChance: 0.18,
+          hotspotBoost: 1.82
         }
       }
     },
@@ -265,7 +267,7 @@ const VARIANT_DEFINITIONS = {
     {
       id: "studio",
       label: "Studio Mist",
-      description: "Current mint-lilac pearl with opaline sparkle and a milky body."
+      description: "Shell-white pearl with nacre shimmer, mint-lilac undertones, and a few rare pearl-star pops."
     },
     {
       id: "snow-shell",
@@ -275,44 +277,45 @@ const VARIANT_DEFINITIONS = {
         glintBlendMode: "lighter",
         body: {
           paletteStops: [
-            { hueShift: -112, saturation: 18, lightness: 46, alpha: 0.74 },
-            { hueShift: -20, saturation: 22, lightness: 78, alpha: 0.82 },
-            { hueShift: 54, saturation: 28, lightness: 92, alpha: 0.86 },
+            { hueShift: -112, saturation: 18, lightness: 44, alpha: 0.76 },
+            { hueShift: -20, saturation: 22, lightness: 80, alpha: 0.82 },
+            { hueShift: 54, saturation: 30, lightness: 93, alpha: 0.86 },
             { hueShift: 118, saturation: 42, lightness: 98, alpha: 0.88 }
           ]
         },
         sparkle: {
           baseColors: [
-            "rgba(255,250,255,0.96)",
+            "rgba(255,249,245,0.96)",
             "rgba(220,251,255,0.9)",
             "rgba(255,227,242,0.9)",
-            "rgba(233,255,247,0.88)"
+            "rgba(233,255,247,0.88)",
+            "rgba(255,255,255,0.94)"
           ],
-          hueBase: 220,
-          saturationBase: 54,
-          saturationAmplitude: 18,
-          lightnessBase: 82,
-          lightnessAmplitude: 14
+          hueBase: 214,
+          saturationBase: 40,
+          saturationAmplitude: 12,
+          lightnessBase: 86,
+          lightnessAmplitude: 13
         },
         sparkleProfile: {
           brightnessMin: 0.74,
-          brightnessMax: 1.86,
+          brightnessMax: 1.84,
           hotspotChance: 0.16,
-          hotspotBoost: 1.66
+          hotspotBoost: 1.64
         }
       }
     },
     {
       id: "mermaid-shell",
       label: "Mermaid Shell",
-      description: "More mint, lilac, and blush interference with visibly colored prism flakes.",
+      description: "More mint, lilac, and blush nacre with visibly colored prism flakes and a sweeter shell haze.",
       inkPatch: {
         body: {
           paletteStops: [
-            { hueShift: -124, saturation: 28, lightness: 34, alpha: 0.76 },
-            { hueShift: -18, saturation: 38, lightness: 64, alpha: 0.82 },
-            { hueShift: 66, saturation: 48, lightness: 86, alpha: 0.86 },
-            { hueShift: 132, saturation: 68, lightness: 95, alpha: 0.88 }
+            { hueShift: -124, saturation: 24, lightness: 42, alpha: 0.76 },
+            { hueShift: -18, saturation: 32, lightness: 70, alpha: 0.82 },
+            { hueShift: 66, saturation: 42, lightness: 88, alpha: 0.86 },
+            { hueShift: 132, saturation: 58, lightness: 96, alpha: 0.88 }
           ]
         },
         sparkle: {
@@ -320,12 +323,13 @@ const VARIANT_DEFINITIONS = {
             "rgba(201,255,233,0.9)",
             "rgba(228,204,255,0.9)",
             "rgba(255,207,232,0.88)",
-            "rgba(199,235,255,0.9)"
+            "rgba(199,235,255,0.9)",
+            "rgba(255,245,248,0.88)"
           ],
           hueBase: 238,
-          saturationBase: 84,
-          saturationAmplitude: 26,
-          lightnessBase: 78,
+          saturationBase: 76,
+          saturationAmplitude: 24,
+          lightnessBase: 80,
           lightnessAmplitude: 15
         }
       }
@@ -335,37 +339,51 @@ const VARIANT_DEFINITIONS = {
     {
       id: "studio",
       label: "Studio Fire",
-      description: "Current opal balance: pastel body with drifting peach-and-citron fire."
+      description: "Aqua-lilac opal with peach-citron fire, candy flashes, and a more obviously precious shimmer."
     },
     {
       id: "fire-kiss",
       label: "Fire Kiss",
       description: "Richer peach, citron, and candy-white fire for a more opulent opal flash.",
+      palettePatch: {
+        bodyProfile: {
+          pigmentAlpha: 0.82,
+          highlightAlpha: 0.42
+        }
+      },
       inkPatch: {
+        body: {
+          paletteStops: [
+            { hueShift: -38, saturation: 76, lightness: 34, alpha: 0.82 },
+            { hueShift: 88, saturation: 82, lightness: 58, alpha: 0.86 },
+            { hueShift: 154, saturation: 98, lightness: 84, alpha: 0.9 },
+            { hueShift: 208, saturation: 94, lightness: 80, alpha: 0.86 }
+          ]
+        },
         sparkle: {
           baseColors: [
-            "rgba(255,244,182,0.9)",
-            "rgba(255,212,170,0.9)",
-            "rgba(209,255,235,0.92)",
-            "rgba(255,248,255,0.92)"
+            "rgba(255,244,182,0.92)",
+            "rgba(255,198,150,0.92)",
+            "rgba(212,255,236,0.92)",
+            "rgba(255,248,255,0.94)"
           ],
           hueBase: 154,
-          saturationBase: 94,
-          saturationAmplitude: 24,
+          saturationBase: 100,
+          saturationAmplitude: 26,
           lightnessBase: 76,
-          lightnessAmplitude: 15
+          lightnessAmplitude: 16
         },
         sparkleProfile: {
-          brightnessMax: 1.6,
-          hotspotChance: 0.12,
-          hotspotBoost: 1.42
+          brightnessMax: 1.82,
+          hotspotChance: 0.18,
+          hotspotBoost: 1.6
         }
       }
     },
     {
       id: "sugar-cloud",
       label: "Sugar Cloud",
-      description: "Softer pastel opal with airy mint-lilac haze and fewer hard fire cuts.",
+      description: "Softer pastel opal with airy mint-lilac haze, still brighter and more fire-tipped than pearl.",
       palettePatch: {
         bodyProfile: {
           pigmentAlpha: 0.74
@@ -385,15 +403,16 @@ const VARIANT_DEFINITIONS = {
             "rgba(213,255,236,0.88)",
             "rgba(214,218,255,0.88)",
             "rgba(255,216,245,0.86)",
-            "rgba(255,244,189,0.84)"
+            "rgba(255,229,180,0.84)"
           ],
-          lightnessBase: 80,
-          lightnessAmplitude: 10,
+          lightnessBase: 79,
+          lightnessAmplitude: 11,
           alpha: 0.9
         },
         sparkleProfile: {
           density: 0.066,
-          brightnessMax: 1.34
+          brightnessMax: 1.42,
+          hotspotChance: 0.08
         }
       }
     }
@@ -402,7 +421,7 @@ const VARIANT_DEFINITIONS = {
     {
       id: "studio",
       label: "Studio Foil",
-      description: "Current rose foil with plum-copper body color and warm champagne flashes."
+      description: "Current rose foil with plum-copper body color, warm champagne flashes, and a few cutie mirror pops."
     },
     {
       id: "og-glitz",
@@ -464,7 +483,7 @@ const VARIANT_DEFINITIONS = {
     {
       id: "studio",
       label: "Studio Dust",
-      description: "Current galaxy body: smoky violet-black with slow spectral star flashes."
+      description: "Current galaxy body: smoky violet-black with slow spectral star flashes and a few mint-candy twinkles."
     },
     {
       id: "neon-nebula",
@@ -520,7 +539,7 @@ const VARIANT_DEFINITIONS = {
     {
       id: "studio",
       label: "Studio Glow",
-      description: "Current ember ribbon with rose-gold sparks and a warm glittery flicker."
+      description: "Current ember ribbon with rose-gold sparks, a warm glittery flicker, and a few hotter crackly pops."
     },
     {
       id: "peach-spark",
@@ -576,9 +595,9 @@ const VARIANT_DEFINITIONS = {
         },
         sparkleProfile: {
           brightnessMin: 0.62,
-          brightnessMax: 1.56,
-          hotspotChance: 0.08,
-          hotspotBoost: 1.26
+          brightnessMax: 1.64,
+          hotspotChance: 0.12,
+          hotspotBoost: 1.34
         }
       }
     }

@@ -1,2 +1,5 @@
 deploy.outputs.json
 .DS_Store
+site/audit-captures/*
+!site/audit-captures/README.md
+!site/audit-captures/iteration-log.md

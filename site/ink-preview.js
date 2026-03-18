@@ -40,7 +40,8 @@ function drawSprayBurst(ctx, preset, point, angle, progress, seed, density, brus
 
 function drawInkSwoopPreview(canvas, preset, {
   compact = false,
-  active = false
+  active = false,
+  timeMs = 1820
 } = {}) {
   const width = Math.max(canvas.clientWidth || canvas.width || 140, compact ? 52 : 140);
   const height = Math.max(canvas.clientHeight || canvas.height || 44, compact ? 28 : 58);
@@ -82,7 +83,7 @@ function drawInkSwoopPreview(canvas, preset, {
   }
 
   sparkles.slice(0, compact ? 5 : 10).forEach((node, index) => {
-    preset.renderGlint(ctx, node, 1120 + index * 41);
+    preset.renderGlint(ctx, node, timeMs + index * 41);
   });
 
   if (active) {
